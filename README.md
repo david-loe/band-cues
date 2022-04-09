@@ -1,4 +1,4 @@
-# band-cues
+# Band Cues🎧
 
 ## Project setup
 ```
