@@ -14,15 +14,15 @@
 
       <div class="col-auto">
         <label for="beatsPerBar" class="form-label">Beats per Bar</label>
-        <input type="number" class="form-control" id="beatsPerBar" min="1" max="8" v-model="beatsPerBar" />
+        <input type="number" class="form-control" id="beatsPerBar" min="2" max="8" v-model="beatsPerBar" />
       </div>
       <div class="col-auto">
-        <label for="oscFrequency" class="form-label">Click freq.</label>
-        <input type="number" class="form-control" id="oscFrequency" min="20" max="20000" v-model="oscFrequency" />
-      </div>
-      <div class="col-auto">
-        <label for="firstOscFrequency" class="form-label">First Click freq.</label>
+        <label for="firstOscFrequency" class="form-label">First Click Tone [hz]</label>
         <input type="number" class="form-control" id="firstOscFrequency" min="20" max="20000" v-model="firstOscFrequency" />
+      </div>
+      <div class="col-auto">
+        <label for="oscFrequency" class="form-label">Click Tone [hz]</label>
+        <input type="number" class="form-control" id="oscFrequency" min="20" max="20000" v-model="oscFrequency" />
       </div>
       <div class="col-auto">
         <label for="fileFormat" class="form-label">File Format</label>
@@ -30,6 +30,8 @@
           <option v-for="format in fileFormats" :key="format">{{ format }}</option>
         </select>
       </div>
+      <small v-if="fileFormat === 'mp3'">ℹ Converting to MP3 takes signifigantly longer than WAV</small>
+      <small v-if="beatsPerBar === 6">ℹ Consider Double Time Click and 3 Beats per Bar</small>
     </div>
     <div class="mb-4 row">
       <ul class="col-auto list-group mb-2">
@@ -150,7 +152,7 @@ export default {
       return { section: null, isFirstBeatOfSection: false }
     },
     inputCorrect() {
-      return this.beatsPerBar <= 8 && this.beatsPerBar > 0 && this.sections.length > 0
+      return this.beatsPerBar <= 8 && this.beatsPerBar >= 2 && this.sections.length > 0
     },
     async generate() {
       if (!this.inputCorrect()) return ''
