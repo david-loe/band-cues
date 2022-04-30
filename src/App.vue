@@ -2,61 +2,226 @@
   <div class="container">
     <h1>Band Cues🎧</h1>
 
-    <div class="row mb-3">
+    <div class="row mb-5">
       <div class="col-auto">
         <label for="bpm" class="form-label">BPM</label>
-        <input type="number" class="form-control" id="bpm" v-model="bpm" />
+        <input type="number" class="form-control" id="bpm" min="1" v-model="bpm" />
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="doubleTime" v-model="doubleTime" />
+          <label class="form-check-label" for="doubleTime">Double Time Click</label>
+        </div>
       </div>
+
       <div class="col-auto">
         <label for="beatsPerBar" class="form-label">Beats per Bar</label>
-        <input type="number" class="form-control" id="beatsPerBar" v-model="beatsPerBar" />
+        <input type="number" class="form-control" id="beatsPerBar" min="1" max="8" v-model="beatsPerBar" />
       </div>
       <div class="col-auto">
-        <label for="numberOFBars" class="form-label">Number of Bars</label>
-        <input type="number" class="form-control" id="numberOFBars" v-model="numberOfBars" />
+        <label for="oscFrequency" class="form-label">Click freq.</label>
+        <input type="number" class="form-control" id="oscFrequency" min="20" max="20000" v-model="oscFrequency" />
+      </div>
+      <div class="col-auto">
+        <label for="firstOscFrequency" class="form-label">First Click freq.</label>
+        <input type="number" class="form-control" id="firstOscFrequency" min="20" max="20000" v-model="firstOscFrequency" />
+      </div>
+      <div class="col-auto">
+        <label for="fileFormat" class="form-label">File Format</label>
+        <select class="form-select" v-model="fileFormat" :id="fileFormat">
+          <option v-for="format in fileFormats" :key="format">{{ format }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="mb-4 row">
+      <ul class="col-auto list-group mb-2">
+        <li class="list-group-item" v-for="(section, index) in sections" :key="index">
+          <div class="row align-items-end">
+            <div class="col-auto">
+              <label :for="index + 'section'" class="form-label">Section</label>
+              <select class="form-select" v-model="section.type" :id="index + 'section'">
+                <option v-for="type in cueTypes" :key="type">{{ type }}</option>
+              </select>
+            </div>
+            <div class="col-auto" style="max-width: 100px">
+              <label :for="index + 'numberOFBars'" class="form-label">Bars</label>
+              <input type="number" class="form-control" min="1" :id="index + 'numberOFBars'" v-model="section.numberOfBars" />
+            </div>
+            <div class="col-auto">
+              <button type="button" class="btn btn-info" v-on:click="duplicateSection(section)">Duplicate</button>
+            </div>
+            <div class="col-auto">
+              <button type="button" class="btn btn-danger" v-on:click="deleteSection(section)">Delete</button>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <div v-if="sections.length === 0" class="alert alert-secondary mb-2" role="alert">No Section defined.</div>
+      <div class="mb-2">
+        <button type="button" class="btn btn-outline-secondary" v-on:click="addSection()">Add Section</button>
       </div>
     </div>
     <div class="mb-3">
-      <button type="button" class="btn btn-primary" v-on:click="generate()">Generate</button>
+      <button type="button" class="btn btn-primary" v-on:click="generate()" :disabled="isLoading || !inputCorrect()">Generate</button>
     </div>
-    <audio controls :src="cueTrack"></audio>
+    <div v-if="isLoading">
+      <div class="spinner-border text-primary">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <small class="text-primary">This migth take up to a minute..</small>
+    </div>
+    <div v-if="cueTrack !== '' && !isLoading">
+      <audio controls :src="cueTrack"></audio>
+      <br />
+      <small> Cues🎧 from <a href="https://worshiptutorials.com/product/clicks-and-cues/">WorshipTutorials</a> </small>
+    </div>
   </div>
 </template>
 
 <script>
 import * as Tone from 'tone'
+import lamejs from 'lamejs'
+
 export default {
   name: 'App',
   components: {},
   data() {
     return {
+      cueTypes: [
+        'AcaPella',
+        'Band',
+        'Break',
+        'Bridge',
+        'Chorus',
+        'Count',
+        'End',
+        'Instrumental',
+        'Intro',
+        'KeyChange',
+        'Outro',
+        'PreChorus',
+        'Ready',
+        'Riff',
+        'Solo',
+        'Tag',
+        'Turn',
+        'Verse',
+      ],
+      oscTypes: ['sine', 'sawtooth', 'square', 'triangle'],
+      fileFormats: ['mp3', 'wav'],
+      fileFormat: 'wav',
+      oscFrequency: 440,
+      firstOscFrequency: 600,
       bpm: 120,
       beatsPerBar: 4,
       numberOfBars: 10,
       cueDuration: 5,
       cueTrack: '',
+      isLoading: false,
+      sections: [{ type: 'Intro', numberOfBars: 4 }],
+      doubleTime: false,
     }
   },
   methods: {
-    async generate() {
-      this.cueDuration = Math.ceil((60 / this.bpm) * this.beatsPerBar * this.numberOfBars)
+    addSection() {
+      this.sections.push({ type: 'Intro', numberOfBars: 4 })
+    },
+    duplicateSection(section) {
+      const newSection = {}
+      Object.assign(newSection, section)
+      const index = this.sections.indexOf(section)
+      if (index !== -1) {
+        this.sections.splice(index, 0, newSection)
+      }
+    },
+    deleteSection(section) {
+      const index = this.sections.indexOf(section)
+      if (index !== -1) {
+        this.sections.splice(index, 1)
+      }
+    },
+    getSection(beat) {
       var countBeats = 0
+      for (var i = 0; i < this.sections.length; i++) {
+        var isFirstBeatOfSection = countBeats + 1 === beat
+        countBeats += this.beatsPerBar * this.sections[i].numberOfBars
+        if (beat <= countBeats) {
+          return { section: this.sections[i], isFirstBeatOfSection: isFirstBeatOfSection }
+        }
+      }
+      return { section: null, isFirstBeatOfSection: false }
+    },
+    inputCorrect() {
+      return this.beatsPerBar <= 8 && this.beatsPerBar > 0 && this.sections.length > 0
+    },
+    async generate() {
+      if (!this.inputCorrect()) return ''
+      this.isLoading = true
+      var totalNumberOfBars = 0
+      for (const section of this.sections) {
+        totalNumberOfBars += section.numberOfBars
+      }
+      this.cueDuration = Math.ceil((60 / this.bpm) * this.beatsPerBar * totalNumberOfBars)
 
-      const buffer = await Tone.Offline(({ transport }) => {
-        const osc = new Tone.Oscillator().toDestination()
-        transport.bpm.value = this.bpm
-        transport.scheduleRepeat((time) => {
-          if (++countBeats > this.numberOfBars * this.beatsPerBar) {
-            transport.stop()
-          } else {
-            osc.start(time).stop(time + 0.05)
+      const buffer = await Tone.Offline(
+        async ({ transport }) => {
+          const osc = new Tone.Oscillator(this.oscFrequency, this.oscTypes[0]).toDestination()
+          const firstOsc = new Tone.Oscillator(this.firstOscFrequency, this.oscTypes[0]).toDestination()
+          const offlineDestination = Tone.getDestination()
+          const player = {}
+          for (var i = 0; i < this.sections.length; i++) {
+            player[this.sections[i].type] = new Tone.Player().connect(offlineDestination)
+            await player[this.sections[i].type].load(require('./assets/cues/' + this.sections[i].type + '.wav'))
           }
-        }, '4n')
-        transport.start()
-      }, this.cueDuration)
+          for (i = 2; i <= this.beatsPerBar; i++) {
+            player[i.toString()] = new Tone.Player().connect(offlineDestination)
+            await player[i.toString()].load(require('./assets/cues/' + i.toString() + '.wav'))
+          }
 
-      this.cueTrack = URL.createObjectURL(this.bufferToWave(buffer.get()))
-      console.log(this.cueTrack)
+          transport.bpm.value = this.bpm
+
+          var countBeats = 0
+          var cueCounting = false
+          transport.scheduleRepeat((time) => {
+            if (++countBeats > totalNumberOfBars * this.beatsPerBar) {
+              transport.stop()
+            } else {
+              if (countBeats % this.beatsPerBar === 1) {
+                cueCounting = false
+                firstOsc.start(time).stop(time + 0.05)
+                const getSection = this.getSection(countBeats)
+                if (getSection.isFirstBeatOfSection) {
+                  player[getSection.section.type].start(time)
+                  cueCounting = true
+                }
+              } else {
+                osc.start(time).stop(time + 0.05)
+                if (cueCounting) {
+                  player[(((countBeats - 1) % this.beatsPerBar) + 1).toString()].start(time)
+                }
+              }
+            }
+          }, '4n')
+          if (this.doubleTime) {
+            transport.scheduleRepeat(
+              (time) => {
+                osc.start(time).stop(time + 0.05)
+              },
+              '4n',
+              '8n',
+            )
+          }
+
+          transport.start()
+        },
+        this.cueDuration,
+        1,
+      )
+      if(this.fileFormat === 'wav'){
+        this.cueTrack = URL.createObjectURL(new Blob([this.bufferToWave(buffer.get())], { type: 'audio/wav' }))
+      }else if(this.fileFormat === 'mp3'){
+        this.cueTrack = URL.createObjectURL(new Blob(this.wave2mp3(this.bufferToWave(buffer.get())), { type: 'audio/mp3' }))
+      }
+      this.isLoading = false
+      clearInterval(this.progressIntervall)
     },
     // Source: https://www.russellgood.com/how-to-convert-audiobuffer-to-audio-file/
     /**Convert an AudioBuffer to a Blob using WAVE representation
@@ -106,7 +271,7 @@ export default {
       }
 
       // create Blob
-      return new Blob([buffer], { type: 'audio/wav' })
+      return buffer
 
       function setUint16(data) {
         view.setUint16(pos, data, true)
@@ -117,6 +282,28 @@ export default {
         view.setUint32(pos, data, true)
         pos += 4
       }
+    },
+    wave2mp3(waveBuffer) {
+      const kbps = 128 //encode 128kbps mp3
+      const sampleBlockSize = 1152 //can be anything but make it a multiple of 576 to make encoders life easier
+      const waveHeader = lamejs.WavHeader.readHeader(new DataView(waveBuffer))
+      const samples = new Int16Array(waveBuffer, waveHeader.dataOffset, waveHeader.dataLen / 2)
+      const mp3encoder = new lamejs.Mp3Encoder(waveHeader.channels, waveHeader.sampleRate, kbps)
+      var mp3Data = []
+
+      for (var i = 0; i < samples.length; i += sampleBlockSize) {
+        var sampleChunk = samples.subarray(i, i + sampleBlockSize)
+        var mp3buf = mp3encoder.encodeBuffer(sampleChunk)
+        if (mp3buf.length > 0) {
+          mp3Data.push(mp3buf)
+        }
+      }
+      mp3buf = mp3encoder.flush() //finish writing mp3
+
+      if (mp3buf.length > 0) {
+        mp3Data.push(new Int8Array(mp3buf))
+      }
+      return mp3Data
     },
   },
 }
