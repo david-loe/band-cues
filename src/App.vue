@@ -4,7 +4,8 @@
 
     <div class="row mb-5">
       <div class="col-auto">
-        <label for="bpm" class="form-label">BPM</label>
+        <label for="bpm" class="form-label">BPM <i class="bi bi-speedometer"></i>
+</label>
         <input type="number" class="form-control" id="bpm" min="1" v-model="bpm" />
         <div class="form-check form-switch">
           <input class="form-check-input" type="checkbox" id="doubleTime" v-model="doubleTime" />
@@ -48,21 +49,40 @@
               <input type="number" class="form-control" min="1" :id="index + 'numberOFBars'" v-model="section.numberOfBars" />
             </div>
             <div class="col-auto">
-              <button type="button" class="btn btn-info" v-on:click="duplicateSection(section)">Duplicate</button>
+              <button type="button" class="btn btn-secondary d-none d-sm-block" v-on:click="duplicateSection(section)">
+                <i class="bi bi-clipboard-plus"></i>
+                Duplicate
+                </button>
+              <button type="button" class="btn btn-secondary d-sm-none" v-on:click="duplicateSection(section)">
+                <i class="bi bi-clipboard-plus"></i>
+                </button>
+                <div>
+                <button type="button" class="btn btn-danger d-sm-none" v-on:click="deleteSection(section)"><i class="bi bi-trash"></i></button>
+
+                </div>
             </div>
             <div class="col-auto">
-              <button type="button" class="btn btn-danger" v-on:click="deleteSection(section)">Delete</button>
+              <button type="button" class="btn btn-danger d-none d-sm-block" v-on:click="deleteSection(section)">
+                <i class="bi bi-trash"></i>
+                Delete
+              </button>
+              
             </div>
           </div>
         </li>
       </ul>
       <div v-if="sections.length === 0" class="alert alert-secondary mb-2" role="alert">No Section defined.</div>
       <div class="mb-2">
-        <button type="button" class="btn btn-outline-secondary" v-on:click="addSection()">Add Section</button>
+        <button type="button" class="btn btn-outline-secondary" v-on:click="addSection()">
+          <i class="bi bi-plus-lg"></i>
+          Add Section
+          </button>
       </div>
     </div>
     <div class="mb-3">
-      <button type="button" class="btn btn-primary" v-on:click="generate()" :disabled="isLoading || !inputCorrect()">Generate</button>
+      <button type="button" class="btn btn-primary" v-on:click="generate()" :disabled="isLoading || !inputCorrect()">
+        <i class="bi bi-play-circle"></i>
+        Generate</button>
     </div>
     <div v-if="isLoading">
       <div class="spinner-border text-primary">
@@ -217,9 +237,9 @@ export default {
         this.cueDuration,
         1,
       )
-      if(this.fileFormat === 'wav'){
+      if (this.fileFormat === 'wav') {
         this.cueTrack = URL.createObjectURL(new Blob([this.bufferToWave(buffer.get())], { type: 'audio/wav' }))
-      }else if(this.fileFormat === 'mp3'){
+      } else if (this.fileFormat === 'mp3') {
         this.cueTrack = URL.createObjectURL(new Blob(this.wave2mp3(this.bufferToWave(buffer.get())), { type: 'audio/mp3' }))
       }
       this.isLoading = false
