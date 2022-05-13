@@ -36,6 +36,18 @@
     </div>
     <div class="mb-4 row">
       <ul class="col-auto list-group mb-2">
+      <li class="list-group-item">
+      <div class="row align-items-end">
+            <div class="col-auto">
+            <label for="preBarsSection" class="form-label">Section</label>
+            <input type="text" class="form-control" value="Prebars" id="preBarsSection" readonly/>
+            </div>
+            <div class="col-auto" style="max-width: 100px">
+              <label for="numberOfPreBars" class="form-label">Bars</label>
+              <input type="number" class="form-control" min="1" id="numberOfPreBars" v-model="numberOfPreBars" />
+            </div>
+            </div>
+            </li>
         <li class="list-group-item" v-for="(section, index) in sections" :key="index">
           <div class="row align-items-end">
             <div class="col-auto">
@@ -45,8 +57,8 @@
               </select>
             </div>
             <div class="col-auto" style="max-width: 100px">
-              <label :for="index + 'numberOFBars'" class="form-label">Bars</label>
-              <input type="number" class="form-control" min="1" :id="index + 'numberOFBars'" v-model="section.numberOfBars" />
+              <label :for="index + 'numberOfBars'" class="form-label">Bars</label>
+              <input type="number" class="form-control" min="1" :id="index + 'numberOfBars'" v-model="section.numberOfBars" />
             </div>
             <div class="col-auto">
               <button type="button" class="btn btn-secondary d-none d-sm-block" v-on:click="duplicateSection(section)">
@@ -138,6 +150,7 @@ export default {
       cueDuration: 5,
       cueTrack: '',
       isLoading: false,
+      numberOfPreBars: 4,
       sections: [{ type: 'Intro', numberOfBars: 4 }],
       doubleTime: false,
     }
@@ -177,7 +190,7 @@ export default {
     async generate() {
       if (!this.inputCorrect()) return ''
       this.isLoading = true
-      var totalNumberOfBars = 0
+      var totalNumberOfBars = this.numberOfPreBars
       for (const section of this.sections) {
         totalNumberOfBars += section.numberOfBars
       }
@@ -209,11 +222,15 @@ export default {
               if (countBeats % this.beatsPerBar === 1) {
                 cueCounting = false
                 firstOsc.start(time).stop(time + 0.05)
-                const getSection = this.getSection(countBeats)
+                var recalcedCountBeats = countBeats - ((this.numberOfPreBars - 1) * this.beatsPerBar)
+                if(recalcedCountBeats >= 0){
+                  const getSection = this.getSection(recalcedCountBeats)
                 if (getSection.isFirstBeatOfSection) {
                   player[getSection.section.type].start(time)
                   cueCounting = true
                 }
+                }
+                
               } else {
                 osc.start(time).stop(time + 0.05)
                 if (cueCounting) {
