@@ -17,3 +17,8 @@ npm run serve
 ```
 npm run build
 ```
+
+### Push new build to github pages
+```
+git subtree push --prefix dist origin gh-pages
+```
