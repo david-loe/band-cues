@@ -113,9 +113,6 @@
         <i class="bi bi-play-circle"></i>
         Generate</button>
       <button type="button" class="ms-2 me-2 btn btn-outline-secondary" v-on:click="cueToUrl()"><i class="bi bi-clipboard"></i> Copy Cue URL</button>
-      <span v-if="clipboardState === 1"><i class="bi bi-hourglass-split"></i></span>
-      <span v-else-if="clipboardState === 2"><i class="bi bi-check"></i></span>
-      <span v-else-if="clipboardState === -1"><i class="bi bi-x"></i></span>
     </div>
     <div v-if="isLoading">
       <div class="spinner-border text-primary">
@@ -173,7 +170,6 @@ export default {
       fileFormats: ['mp3', 'wav'],
       cueTrack: '',
       isLoading: false,
-      clipboardState: 0,
       settings: {
         fileFormat: 'wav',
         oscFrequency: 440,
@@ -188,9 +184,7 @@ export default {
   },
   methods: {
     cueToUrl(){
-      this.clipboardState = 1
-      console.log(window.location)
-      var url = window.location.origin + "/?"
+      var url = window.location.origin + window.location.pathname + "?"
       url = url + new URLSearchParams(this.settings).toString()
       var sectionURL = ""
       for (const section of this.sections) {
@@ -200,13 +194,10 @@ export default {
       console.log(url)
       if(window.isSecureContext){
         navigator.clipboard.writeText(url).then(function() {
-        this.clipboardState = 2
+        console.log("success")
       }, function(err) {
-        this.clipboardState = -1
         console.log(err)
       });
-      }else{
-        this.clipboardState = -1
       }
     },
     urlToCue(){
