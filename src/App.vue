@@ -1,100 +1,121 @@
 <template>
   <div class="container">
     <h1>Band Cues🎧</h1>
+    <form @submit.prevent="generate()">
 
     <div class="row mb-5">
       <div class="col-auto">
         <label for="bpm" class="form-label">BPM <i class="bi bi-speedometer"></i>
 </label>
-        <input type="number" class="form-control" id="bpm" min="1" v-model="bpm" />
+        <input type="number" class="form-control" id="bpm" v-model="settings.bpm" min="1" max="300" />
         <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="doubleTime" v-model="doubleTime" />
+          <input class="form-check-input" type="checkbox" id="doubleTime" v-model="settings.doubleTime" />
           <label class="form-check-label" for="doubleTime">Double Time Click</label>
         </div>
       </div>
 
       <div class="col-auto">
         <label for="beatsPerBar" class="form-label">Beats per Bar</label>
-        <input type="number" class="form-control" id="beatsPerBar" min="2" max="8" v-model="beatsPerBar" />
+        <input type="number" class="form-control" id="beatsPerBar" min="2" max="8" v-model="settings.beatsPerBar" />
       </div>
       <div class="col-auto">
         <label for="firstOscFrequency" class="form-label">First Click Tone [hz]</label>
-        <input type="number" class="form-control" id="firstOscFrequency" min="20" max="20000" v-model="firstOscFrequency" />
+        <input type="number" class="form-control" id="firstOscFrequency" min="20" max="20000" v-model="settings.firstOscFrequency" />
       </div>
       <div class="col-auto">
         <label for="oscFrequency" class="form-label">Click Tone [hz]</label>
-        <input type="number" class="form-control" id="oscFrequency" min="20" max="20000" v-model="oscFrequency" />
+        <input type="number" class="form-control" id="oscFrequency" min="20" max="20000" v-model="settings.oscFrequency" />
       </div>
       <div class="col-auto">
         <label for="fileFormat" class="form-label">File Format</label>
-        <select class="form-select" v-model="fileFormat" :id="fileFormat">
+        <select class="form-select" v-model="settings.fileFormat" id="fileFormat">
           <option v-for="format in fileFormats" :key="format">{{ format }}</option>
         </select>
       </div>
-      <small v-if="fileFormat === 'mp3'">ℹ Converting to MP3 takes signifigantly longer than WAV</small>
-      <small v-if="beatsPerBar === 6">ℹ Consider Double Time Click and 3 Beats per Bar</small>
+      <small v-if="settings.fileFormat === 'mp3'">ℹ Converting to MP3 takes signifigantly longer than WAV</small>
+      <small v-if="settings.beatsPerBar === 6">ℹ Consider Double Time Click and 3 Beats per Bar</small>
     </div>
-    <div class="mb-4 row">
-      <ul class="col-auto list-group mb-2">
+    <div class="mb-4">
+    <div class="row mb-2">
+    <div class="col-auto" style="min-width: 390px">
+      <ul class="list-group">
       <li class="list-group-item">
       <div class="row align-items-end">
-            <div class="col-auto">
+            <div class="col-auto"  style="max-width: 160px">
             <label for="preBarsSection" class="form-label">Section</label>
             <input type="text" class="form-control" value="Prebars" id="preBarsSection" readonly/>
             </div>
-            <div class="col-auto" style="max-width: 100px">
+            <div class="col-auto" style="max-width: 80px">
               <label for="numberOfPreBars" class="form-label">Bars</label>
-              <input type="number" class="form-control" min="1" id="numberOfPreBars" v-model="numberOfPreBars" />
+              <input type="number" class="form-control" min="1" id="numberOfPreBars" v-model="settings.numberOfPreBars" />
             </div>
             </div>
             </li>
         <li class="list-group-item" v-for="(section, index) in sections" :key="index">
           <div class="row align-items-end">
-            <div class="col-auto">
+            <div class="col-auto" style="max-width: 160px">
               <label :for="index + 'section'" class="form-label">Section</label>
               <select class="form-select" v-model="section.type" :id="index + 'section'">
                 <option v-for="type in cueTypes" :key="type">{{ type }}</option>
               </select>
             </div>
-            <div class="col-auto" style="max-width: 100px">
+            <div class="col-auto" style="max-width: 80px">
               <label :for="index + 'numberOfBars'" class="form-label">Bars</label>
               <input type="number" class="form-control" min="1" :id="index + 'numberOfBars'" v-model="section.numberOfBars" />
             </div>
             <div class="col-auto">
-              <button type="button" class="btn btn-secondary d-none d-sm-block" v-on:click="duplicateSection(section)">
+              <button type="button" class="btn btn-outline-secondary d-none d-sm-block" v-on:click="duplicateSection(section)">
                 <i class="bi bi-clipboard-plus"></i>
                 Duplicate
                 </button>
-              <button type="button" class="btn btn-secondary d-sm-none" v-on:click="duplicateSection(section)">
+              <div class="d-sm-none mb-1">
+              <button type="button" class="btn btn-outline-secondary me-2" v-on:click="duplicateSection(section)">
                 <i class="bi bi-clipboard-plus"></i>
                 </button>
-                <div>
-                <button type="button" class="btn btn-danger d-sm-none" v-on:click="deleteSection(section)"><i class="bi bi-trash"></i></button>
-
-                </div>
+            <button v-if="sections.indexOf(section) > 0" type="button" class="btn btn-outline-secondary" v-on:click="moveSectionUp(section)"><i class="bi bi-chevron-up"></i></button>
             </div>
-            <div class="col-auto">
-              <button type="button" class="btn btn-danger d-none d-sm-block" v-on:click="deleteSection(section)">
+            <div class="d-sm-none">
+            <button type="button" class="btn btn-outline-danger me-2" v-on:click="deleteSection(section)"><i class="bi bi-trash"></i></button>
+            <button v-if="sections.indexOf(section) < sections.length - 1" type="button" class="btn btn-outline-secondary" v-on:click="moveSectionDown(section)"><i class="bi bi-chevron-down"></i></button>
+            </div>
+              
+            </div>
+            <div class="col-auto d-none d-sm-block">
+              <button type="button" class="btn btn-outline-danger" v-on:click="deleteSection(section)">
                 <i class="bi bi-trash"></i>
                 Delete
               </button>
-              
+            </div>
+            <div class="col-auto d-none d-sm-block">
+            <div class="mb-1">
+            <button v-if="sections.indexOf(section) > 0" type="button" class="btn btn-outline-secondary" v-on:click="moveSectionUp(section)"><i class="bi bi-chevron-up"></i></button>
+            </div>
+            <div>
+            <button v-if="sections.indexOf(section) < sections.length - 1" type="button" class="btn btn-outline-secondary" v-on:click="moveSectionDown(section)"><i class="bi bi-chevron-down"></i></button>
+            </div>
             </div>
           </div>
         </li>
       </ul>
+      </div>
+      </div>
       <div v-if="sections.length === 0" class="alert alert-secondary mb-2" role="alert">No Section defined.</div>
       <div class="mb-2">
-        <button type="button" class="btn btn-outline-secondary" v-on:click="addSection()">
+        <button type="button" class="btn btn-secondary" v-on:click="addSection()">
           <i class="bi bi-plus-lg"></i>
           Add Section
           </button>
       </div>
+    
     </div>
     <div class="mb-3">
-      <button type="button" class="btn btn-primary" v-on:click="generate()" :disabled="isLoading || !inputCorrect()">
+      <button type="submit" class="btn btn-primary" :disabled="isLoading || !inputCorrect()">
         <i class="bi bi-play-circle"></i>
         Generate</button>
+      <button type="button" class="ms-2 me-2 btn btn-outline-secondary" v-on:click="cueToUrl()"><i class="bi bi-clipboard"></i> Copy Cue URL</button>
+      <span v-if="clipboardState === 1"><i class="bi bi-hourglass-split"></i></span>
+      <span v-else-if="clipboardState === 2"><i class="bi bi-check"></i></span>
+      <span v-else-if="clipboardState === -1"><i class="bi bi-x"></i></span>
     </div>
     <div v-if="isLoading">
       <div class="spinner-border text-primary">
@@ -102,11 +123,20 @@
       </div>
       <small class="text-primary">This migth take up to a minute..</small>
     </div>
-    <div v-if="cueTrack !== '' && !isLoading">
-      <audio controls :src="cueTrack"></audio>
-      <br />
-      <small> Cues🎧 from <a href="https://worshiptutorials.com/product/clicks-and-cues/">WorshipTutorials</a> </small>
+    <div v-if="cueTrack !== '' && !isLoading" class="row align-items-center">
+    <div class="col-auto">
+    <audio controls :src="cueTrack"></audio>
     </div>
+      
+    <div class="col-auto">
+    <a type="button" class="btn btn-secondary" :href="cueTrack" download="band cues"><i class="bi bi-download"></i></a>
+    </div>
+    <div class="w-100"></div>
+    <div class="col-auto">
+      <small> Cues🎧 from <a href="https://worshiptutorials.com/product/clicks-and-cues/">WorshipTutorials</a> </small>
+      </div>
+    </div>
+    </form>
   </div>
 </template>
 
@@ -141,21 +171,84 @@ export default {
       ],
       oscTypes: ['sine', 'sawtooth', 'square', 'triangle'],
       fileFormats: ['mp3', 'wav'],
-      fileFormat: 'wav',
-      oscFrequency: 440,
-      firstOscFrequency: 600,
-      bpm: 120,
-      beatsPerBar: 4,
-      numberOfBars: 10,
-      cueDuration: 5,
       cueTrack: '',
       isLoading: false,
-      numberOfPreBars: 4,
+      clipboardState: 0,
+      settings: {
+        fileFormat: 'wav',
+        oscFrequency: 440,
+        firstOscFrequency: 600,
+        bpm: 120,
+        beatsPerBar: 4,
+        numberOfPreBars: 4,
+        doubleTime: false,
+      },
       sections: [{ type: 'Intro', numberOfBars: 4 }],
-      doubleTime: false,
     }
   },
   methods: {
+    cueToUrl(){
+      this.clipboardState = 1
+      var url = window.location.origin + "/?"
+      url = url + new URLSearchParams(this.settings).toString()
+      var sectionURL = ""
+      for (const section of this.sections) {
+        sectionURL = sectionURL + "&sections=" + encodeURIComponent('{"type":"' + section.type + '","numberOfBars":' + section.numberOfBars + '}')
+      }
+      url = url + sectionURL
+      console.log(url)
+      if(window.isSecureContext){
+        navigator.clipboard.writeText(url).then(function() {
+        this.clipboardState = 2
+      }, function(err) {
+        this.clipboardState = -1
+        console.log(err)
+      });
+      }else{
+        this.clipboardState = -1
+      }
+    },
+    urlToCue(){
+      const urlParams = new URLSearchParams(window.location.search)
+      const sections = []
+      for(const section of urlParams.getAll("sections")){
+        sections.push(JSON.parse(section))
+      }
+      if(sections.length > 0){
+        this.sections = sections
+      }
+      const settings = Object.keys(this.settings)
+      for (const setting of settings){
+        const value = urlParams.get(setting)
+        if(value !== null){
+          if(!isNaN(value)){
+            this.settings[setting] = +value
+          }else if(value === "true"){
+            this.settings[setting] = true
+          }else if(value === "false"){
+            this.settings[setting] = false
+          }else{
+            this.settings[setting] = value
+          }
+        }
+      }
+    },
+    moveSectionDown(section){
+      const index = this.sections.indexOf(section)
+      if (index !== -1 && index < this.sections.length - 1){
+        var temp = this.sections[index]
+        this.sections[index] = this.sections[index + 1]
+        this.sections[index + 1] = temp
+      }
+    },
+    moveSectionUp(section){
+      const index = this.sections.indexOf(section)
+      if (index > 0){
+        var temp = this.sections[index]
+        this.sections[index] = this.sections[index - 1]
+        this.sections[index - 1] = temp
+      }
+    },
     addSection() {
       this.sections.push({ type: 'Intro', numberOfBars: 4 })
     },
@@ -177,7 +270,7 @@ export default {
       var countBeats = 0
       for (var i = 0; i < this.sections.length; i++) {
         var isFirstBeatOfSection = countBeats + 1 === beat
-        countBeats += this.beatsPerBar * this.sections[i].numberOfBars
+        countBeats += this.settings.beatsPerBar * this.sections[i].numberOfBars
         if (beat <= countBeats) {
           return { section: this.sections[i], isFirstBeatOfSection: isFirstBeatOfSection }
         }
@@ -185,44 +278,46 @@ export default {
       return { section: null, isFirstBeatOfSection: false }
     },
     inputCorrect() {
-      return this.beatsPerBar <= 8 && this.beatsPerBar >= 2 && this.sections.length > 0
+      return this.settings.beatsPerBar <= 8 && this.settings.beatsPerBar >= 2 && this.sections.length > 0
     },
     async generate() {
+      console.log(this.sections)
+      console.log(this.settings)
       if (!this.inputCorrect()) return ''
       this.isLoading = true
-      var totalNumberOfBars = this.numberOfPreBars
+      var totalNumberOfBars = this.settings.numberOfPreBars
       for (const section of this.sections) {
         totalNumberOfBars += section.numberOfBars
       }
-      this.cueDuration = Math.ceil((60 / this.bpm) * this.beatsPerBar * totalNumberOfBars)
+      const cueDuration = Math.ceil((60 / this.settings.bpm) * this.settings.beatsPerBar * totalNumberOfBars)
 
       const buffer = await Tone.Offline(
         async ({ transport }) => {
-          const osc = new Tone.Oscillator(this.oscFrequency, this.oscTypes[0]).toDestination()
-          const firstOsc = new Tone.Oscillator(this.firstOscFrequency, this.oscTypes[0]).toDestination()
+          const osc = new Tone.Oscillator(this.settings.oscFrequency, this.oscTypes[0]).toDestination()
+          const firstOsc = new Tone.Oscillator(this.settings.firstOscFrequency, this.oscTypes[0]).toDestination()
           const offlineDestination = Tone.getDestination()
           const player = {}
           for (var i = 0; i < this.sections.length; i++) {
             player[this.sections[i].type] = new Tone.Player().connect(offlineDestination)
             await player[this.sections[i].type].load(require('./assets/cues/' + this.sections[i].type + '.wav'))
           }
-          for (i = 2; i <= this.beatsPerBar; i++) {
+          for (i = 2; i <= this.settings.beatsPerBar; i++) {
             player[i.toString()] = new Tone.Player().connect(offlineDestination)
             await player[i.toString()].load(require('./assets/cues/' + i.toString() + '.wav'))
           }
 
-          transport.bpm.value = this.bpm
+          transport.bpm.value = this.settings.bpm
 
           var countBeats = 0
           var cueCounting = false
           transport.scheduleRepeat((time) => {
-            if (++countBeats > totalNumberOfBars * this.beatsPerBar) {
+            if (++countBeats > totalNumberOfBars * this.settings.beatsPerBar) {
               transport.stop()
             } else {
-              if (countBeats % this.beatsPerBar === 1) {
+              if (countBeats % this.settings.beatsPerBar === 1) {
                 cueCounting = false
                 firstOsc.start(time).stop(time + 0.05)
-                var recalcedCountBeats = countBeats - ((this.numberOfPreBars - 1) * this.beatsPerBar)
+                var recalcedCountBeats = countBeats - ((this.settings.numberOfPreBars - 1) * this.settings.beatsPerBar)
                 if(recalcedCountBeats >= 0){
                   const getSection = this.getSection(recalcedCountBeats)
                 if (getSection.isFirstBeatOfSection) {
@@ -234,12 +329,12 @@ export default {
               } else {
                 osc.start(time).stop(time + 0.05)
                 if (cueCounting) {
-                  player[(((countBeats - 1) % this.beatsPerBar) + 1).toString()].start(time)
+                  player[(((countBeats - 1) % this.settings.beatsPerBar) + 1).toString()].start(time)
                 }
               }
             }
           }, '4n')
-          if (this.doubleTime) {
+          if (this.settings.doubleTime) {
             transport.scheduleRepeat(
               (time) => {
                 osc.start(time).stop(time + 0.05)
@@ -251,12 +346,12 @@ export default {
 
           transport.start()
         },
-        this.cueDuration,
+        cueDuration,
         1,
       )
-      if (this.fileFormat === 'wav') {
+      if (this.settings.fileFormat === 'wav') {
         this.cueTrack = URL.createObjectURL(new Blob([this.bufferToWave(buffer.get())], { type: 'audio/wav' }))
-      } else if (this.fileFormat === 'mp3') {
+      } else if (this.settings.fileFormat === 'mp3') {
         this.cueTrack = URL.createObjectURL(new Blob(this.wave2mp3(this.bufferToWave(buffer.get())), { type: 'audio/mp3' }))
       }
       this.isLoading = false
@@ -344,6 +439,9 @@ export default {
       }
       return mp3Data
     },
+  },
+  beforeMount() {
+    this.urlToCue()
   },
 }
 </script>
