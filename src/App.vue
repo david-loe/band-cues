@@ -189,6 +189,7 @@ export default {
   methods: {
     cueToUrl(){
       this.clipboardState = 1
+      console.log(window.location)
       var url = window.location.origin + "/?"
       url = url + new URLSearchParams(this.settings).toString()
       var sectionURL = ""
