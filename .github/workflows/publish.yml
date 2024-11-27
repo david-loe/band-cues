@@ -13,9 +13,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Start Container
-        run: docker compose up
-      - name: Run Migration
+      - name: Build
         run: docker compose run app npm run build
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
