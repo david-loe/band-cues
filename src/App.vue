@@ -34,6 +34,12 @@
             <option v-for="format in fileFormats" :key="format">{{ format }}</option>
           </select>
         </div>
+        <div class="col-auto" style="max-width: 100px">
+          <label for="panClick" class="form-label">Pan Click</label>
+          <input type="range" class="form-range" min="-1" max="1" id="panClick" v-model="settings.panClick" />
+          <label for="panCue" class="form-label">Pan Cue</label>
+          <input type="range" class="form-range" min="-1" max="1" id="panCue" v-model="settings.panCue" />
+        </div>
         <small v-if="settings.fileFormat === 'mp3'">ℹ Converting to MP3 takes signifigantly longer than WAV</small>
         <small v-if="settings.beatsPerBar === 3">ℹ Consider 6 Beats per Bar and also 3. beat high frequency</small>
       </div>
@@ -212,6 +218,8 @@ export default {
         numberOfPreBars: 2,
         doubleTime: false,
         highlightMiddle: false,
+        panClick: 0,
+        panCue: 0,
       },
       sections: [{ type: 'Intro', numberOfBars: 4 }],
     }
