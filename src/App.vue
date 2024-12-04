@@ -21,7 +21,7 @@
           <input type="number" class="form-control" id="firstOscFrequency" min="20" max="20000" v-model="settings.firstOscFrequency" />
           <div class="form-check form-switch" v-if="settings.beatsPerBar % 2 == 0">
             <input class="form-check-input" type="checkbox" id="highlightMiddle" v-model="settings.highlightMiddle" />
-            <label class="form-check-label" for="highlightMiddle">Also {{(settings.beatsPerBar / 2) + 1}}. Beat</label>
+            <label class="form-check-label" for="highlightMiddle">Also {{ settings.beatsPerBar / 2 + 1 }}. Beat</label>
           </div>
         </div>
         <div class="col-auto">
@@ -172,7 +172,7 @@
 
 <script>
 import * as Tone from 'tone'
-import lamejs from 'lamejs'
+import { bufferToWave, wave2mp3 } from './utils'
 
 export default {
   name: 'App',
@@ -206,7 +206,7 @@ export default {
       settings: {
         fileFormat: 'wav',
         oscFrequency: 1318,
-        firstOscFrequency: 	1760,
+        firstOscFrequency: 1760,
         bpm: 120,
         beatsPerBar: 4,
         numberOfPreBars: 2,
@@ -310,171 +310,117 @@ export default {
       return this.settings.beatsPerBar <= 8 && this.settings.beatsPerBar >= 2 && this.sections.length > 0
     },
     async generate() {
-      const startTime = Date.now()
-      if (!this.inputCorrect()) return ''
-      this.isLoading = true
+      const startTime = Date.now() // Startzeit wird für Logging-Zwecke gespeichert
+      if (!this.inputCorrect()) return '' // Abbruch, wenn die Eingabe ungültig ist
+      this.isLoading = true // Zeigt an, dass der Generierungsprozess gestartet hat
+
+      // Gesamtanzahl der Takte berechnen, einschließlich Vorbereitungs-Takte
       var totalNumberOfBars = this.settings.numberOfPreBars
       for (const section of this.sections) {
         totalNumberOfBars += section.numberOfBars
       }
+
+      // Berechnung der Gesamtdauer der Cue-Audiosequenz
       const cueDuration = Math.ceil((60 / this.settings.bpm) * this.settings.beatsPerBar * totalNumberOfBars)
 
+      // Offline-Audio-Rendering mit Tone.js
       const buffer = await Tone.Offline(
         async ({ transport }) => {
+          // Oszillatoren für Tonausgabe initialisieren
           const osc = new Tone.Oscillator(this.settings.oscFrequency, this.oscTypes[0]).toDestination()
           const firstOsc = new Tone.Oscillator(this.settings.firstOscFrequency, this.oscTypes[0]).toDestination()
-          const offlineDestination = Tone.getDestination()
-          const player = {}
-          var sectionTypes = []
+          const offlineDestination = Tone.getDestination() // Offline-Audioziel für Tone.js
+
+          const player = {} // Speicher für Player-Objekte
+          var sectionTypes = [] // Speichert die Typen der Abschnitte
+
+          // Extrahiert die eindeutigen Abschnittstypen
           for (var i = 0; i < this.sections.length; i++) {
             sectionTypes.push(this.sections[i].type)
           }
           sectionTypes = [...new Set(sectionTypes)]
-          for(const type of sectionTypes){
+
+          // Lädt Audiodateien für jeden Abschnittstyp
+          for (const type of sectionTypes) {
             player[type] = new Tone.Player().connect(offlineDestination)
-            await player[type].load(require('./assets/cues/' + type + '.wav'))
+            await player[type].load(require('./assets/cues/' + type + '.wav')) // Audiodatei laden
           }
+
+          // Lädt Audiodateien für die Beats pro Takt (außer dem ersten Beat)
           for (i = 2; i <= this.settings.beatsPerBar; i++) {
             player[i.toString()] = new Tone.Player().connect(offlineDestination)
             await player[i.toString()].load(require('./assets/cues/' + i.toString() + '.wav'))
           }
 
-          transport.bpm.value = this.settings.bpm
+          transport.bpm.value = this.settings.bpm // Setzt das Tempo des Transports
 
-          var countBeats = 0
-          var cueCounting = false
+          var countBeats = 0 // Zählt die abgespielten Beats
+          var cueCounting = false // Markiert, ob eine Cue-Ansage läuft
+
+          // Hauptzeitplan für Beat-Wiederholungen
           transport.scheduleRepeat((time) => {
             if (++countBeats > totalNumberOfBars * this.settings.beatsPerBar) {
-              transport.stop()
+              transport.stop() // Stoppt den Transport nach der letzten Takt
             } else {
+              // Erster Beat eines Takts
               if (countBeats % this.settings.beatsPerBar === 1) {
-                cueCounting = false
-                firstOsc.start(time).stop(time + 0.04)
+                cueCounting = false // Cue-Ansage zurücksetzen
+                firstOsc.start(time).stop(time + 0.04) // Startet den ersten Oszillator kurz
+
+                // Berechnet den aktuellen Beat relativ zu den Vorbereitungs-Takten
                 var recalcedCountBeats = countBeats - (this.settings.numberOfPreBars - 1) * this.settings.beatsPerBar
                 if (recalcedCountBeats >= 0) {
-                  const getSection = this.getSection(recalcedCountBeats)
+                  const getSection = this.getSection(recalcedCountBeats) // Holt den aktuellen Abschnitt
                   if (getSection.isFirstBeatOfSection) {
-                    player[getSection.section.type].start(time)
-                    cueCounting = true
+                    player[getSection.section.type].start(time) // Spielt Cue für Abschnittstyp ab
+                    cueCounting = true // Aktiviert Cue-Ansage
                   }
                 }
               } else {
-                if(this.settings.highlightMiddle && countBeats % this.settings.beatsPerBar === (this.settings.beatsPerBar / 2) + 1){
-                  firstOsc.start(time).stop(time + 0.04)
-                }else{
-                  osc.start(time).stop(time + 0.04)
+                // Andere Beats im Takt
+                if (this.settings.highlightMiddle && countBeats % this.settings.beatsPerBar === this.settings.beatsPerBar / 2 + 1) {
+                  firstOsc.start(time).stop(time + 0.04) // Mittlerer Beat hervorheben
+                } else {
+                  osc.start(time).stop(time + 0.04) // Standardton für andere Beats
                 }
                 if (cueCounting) {
+                  // Spielt Beat-spezifische Cue ab, wenn Cue-Ansage aktiv ist
                   player[(((countBeats - 1) % this.settings.beatsPerBar) + 1).toString()].start(time)
                 }
               }
             }
-          }, '4n')
+          }, '4n') // Wiederholung im Viertelnoten-Rhythmus
+
+          // Falls Double-Time aktiviert ist, spielt es zusätzliche Cue-Töne
           if (this.settings.doubleTime) {
             transport.scheduleRepeat(
               (time) => {
                 osc.start(time).stop(time + 0.04)
               },
               '4n',
-              '8n',
+              '8n', // Startzeit auf halbe Noten
             )
           }
 
-          transport.start()
+          transport.start() // Startet den Transport
         },
-        cueDuration,
-        1,
+        cueDuration, // Gesamtdauer der Offline-Rendering-Sitzung
+        1, // Offline-Rendering-Qualität (1 = normale Auflösung)
       )
+
+      // Konvertiert den Audio-Buffer in eine WAVE-Datei
+      const wave = bufferToWave(buffer.get())
+
+      // Erstellt eine URL für die generierte Audiodatei je nach Dateiformat
       if (this.settings.fileFormat === 'wav') {
-        this.cueTrack = URL.createObjectURL(new Blob([this.bufferToWave(buffer.get())], { type: 'audio/wav' }))
+        this.cueTrack = URL.createObjectURL(new Blob([wave], { type: 'audio/wav' }))
       } else if (this.settings.fileFormat === 'mp3') {
-        this.cueTrack = URL.createObjectURL(new Blob(this.wave2mp3(this.bufferToWave(buffer.get())), { type: 'audio/mp3' }))
-      }
-      this.isLoading = false
-      console.log(Date.now() - startTime)
-      clearInterval(this.progressIntervall)
-    },
-    // Source: https://www.russellgood.com/how-to-convert-audiobuffer-to-audio-file/
-    /**Convert an AudioBuffer to a Blob using WAVE representation
-     *
-     * @param {AudioBuffer} abuffer
-     */
-    bufferToWave(abuffer) {
-      var numOfChan = abuffer.numberOfChannels,
-        length = abuffer.length * numOfChan * 2 + 44,
-        buffer = new ArrayBuffer(length),
-        view = new DataView(buffer),
-        channels = [],
-        i,
-        sample,
-        offset = 0,
-        pos = 0
-
-      // write WAVE header
-      setUint32(0x46464952) // "RIFF"
-      setUint32(length - 8) // file length - 8
-      setUint32(0x45564157) // "WAVE"
-
-      setUint32(0x20746d66) // "fmt " chunk
-      setUint32(16) // length = 16
-      setUint16(1) // PCM (uncompressed)
-      setUint16(numOfChan)
-      setUint32(abuffer.sampleRate)
-      setUint32(abuffer.sampleRate * 2 * numOfChan) // avg. bytes/sec
-      setUint16(numOfChan * 2) // block-align
-      setUint16(16) // 16-bit (hardcoded in this demo)
-
-      setUint32(0x61746164) // "data" - chunk
-      setUint32(length - pos - 4) // chunk length
-
-      // write interleaved data
-      for (i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i))
-
-      while (pos < length) {
-        for (i = 0; i < numOfChan; i++) {
-          // interleave channels
-          sample = Math.max(-1, Math.min(1, channels[i][offset])) // clamp
-          sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0 // scale to 16-bit signed int
-          view.setInt16(pos, sample, true) // write 16-bit sample
-          pos += 2
-        }
-        offset++ // next source sample
+        this.cueTrack = URL.createObjectURL(new Blob(wave2mp3(wave), { type: 'audio/mp3' }))
       }
 
-      // create Blob
-      return buffer
-
-      function setUint16(data) {
-        view.setUint16(pos, data, true)
-        pos += 2
-      }
-
-      function setUint32(data) {
-        view.setUint32(pos, data, true)
-        pos += 4
-      }
-    },
-    wave2mp3(waveBuffer) {
-      const kbps = 128 //encode 128kbps mp3
-      const sampleBlockSize = 1152 //can be anything but make it a multiple of 576 to make encoders life easier
-      const waveHeader = lamejs.WavHeader.readHeader(new DataView(waveBuffer))
-      const samples = new Int16Array(waveBuffer, waveHeader.dataOffset, waveHeader.dataLen / 2)
-      const mp3encoder = new lamejs.Mp3Encoder(waveHeader.channels, waveHeader.sampleRate, kbps)
-      var mp3Data = []
-
-      for (var i = 0; i < samples.length; i += sampleBlockSize) {
-        var sampleChunk = samples.subarray(i, i + sampleBlockSize)
-        var mp3buf = mp3encoder.encodeBuffer(sampleChunk)
-        if (mp3buf.length > 0) {
-          mp3Data.push(mp3buf)
-        }
-      }
-      mp3buf = mp3encoder.flush() //finish writing mp3
-
-      if (mp3buf.length > 0) {
-        mp3Data.push(new Int8Array(mp3buf))
-      }
-      return mp3Data
+      this.isLoading = false // Markiert, dass die Generierung abgeschlossen ist
+      console.log(Date.now() - startTime) // Protokolliert die verstrichene Zeit
+      clearInterval(this.progressIntervall) // Löscht jegliche laufende Fortschritts-Intervalle
     },
   },
   beforeMount() {
@@ -483,5 +429,4 @@ export default {
 }
 </script>
 
-<style>
-</style>
+<style></style>
