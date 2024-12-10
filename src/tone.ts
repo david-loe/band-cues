@@ -37,10 +37,16 @@ export default class MD {
     // Offline-Audio-Rendering mit Tone.js
     const buffer = await Tone.Offline(
       async ({ transport }) => {
+        //Channel
+        const clickChannel = new Tone.Channel({
+          pan: this.settings.panClick,
+          mute: this.settings.muteClick
+        }).toDestination()
+        const cueChannel = new Tone.Channel({ pan: this.settings.panCue, mute: this.settings.muteCue }).toDestination()
+
         // Oszillatoren für Tonausgabe initialisieren
-        const osc = new Tone.Oscillator(this.settings.oscFrequency, oscTypes[0]).toDestination()
-        const firstOsc = new Tone.Oscillator(this.settings.firstOscFrequency, oscTypes[0]).toDestination()
-        const offlineDestination = Tone.getDestination() // Offline-Audioziel für Tone.js
+        const osc = new Tone.Oscillator(this.settings.oscFrequency, oscTypes[0]).connect(clickChannel)
+        const firstOsc = new Tone.Oscillator(this.settings.firstOscFrequency, oscTypes[0]).connect(clickChannel)
 
         const player = {} as { [K in CueType | CountType]?: Tone.Player } // Speicher für Player-Objekte
         var sectionTypes: CueType[] = [] // Speichert die Typen der Abschnitte
@@ -55,13 +61,13 @@ export default class MD {
 
         // Lädt Audiodateien für jeden Abschnittstyp
         for (const type of sectionTypes) {
-          player[type] = new Tone.Player().connect(offlineDestination)
+          player[type] = new Tone.Player().connect(cueChannel)
           await player[type].load(new URL(`./assets/cues/${type}.wav`, import.meta.url).href) // Audiodatei laden
         }
 
         // Lädt Audiodateien für die Beats pro Takt (außer dem ersten Beat)
         for (i = 2; i <= this.settings.beatsPerBar; i++) {
-          player[i.toString() as CountType] = new Tone.Player().connect(offlineDestination)
+          player[i.toString() as CountType] = new Tone.Player().connect(cueChannel)
           await player[i.toString() as CountType]!.load(new URL(`./assets/cues/${i}.wav`, import.meta.url).href)
         }
 
@@ -104,7 +110,7 @@ export default class MD {
           }
         }, '4n') // Wiederholung im Viertelnoten-Rhythmus
 
-        // Falls Double-Time aktiviert ist, spielt es zusätzliche Cue-Töne
+        // Falls Double-Time aktiviert ist, spielt es zusätzliche Click-Töne
         if (this.settings.doubleTime) {
           transport.scheduleRepeat(
             (time) => {
@@ -117,11 +123,13 @@ export default class MD {
         transport.start() // Startet den Transport
       },
       cueDuration, // Gesamtdauer der Offline-Rendering-Sitzung
-      1 // Offline-Rendering-Qualität (1 = normale Auflösung)
+      2
     )
 
     // Konvertiert den Audio-Buffer in eine WAVE-Datei
+
     const audioBuffer = buffer.get()
+
     let result = ''
     if (audioBuffer) {
       const wave = bufferToWave(audioBuffer)

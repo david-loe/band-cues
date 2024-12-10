@@ -34,12 +34,41 @@
             <option v-for="format in fileFormats" :key="format">{{ format }}</option>
           </select>
         </div>
-        <div class="col-auto" style="max-width: 100px">
-          <label for="panClick" class="form-label">Pan Click</label>
-          <input type="range" class="form-range" min="-1" max="1" id="panClick" v-model="settings.panClick" />
-          <label for="panCue" class="form-label">Pan Cue</label>
-          <input type="range" class="form-range" min="-1" max="1" id="panCue" v-model="settings.panCue" />
+        <div class="col-auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">Click</th>
+                <th scope="col">Cue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"></th>
+                <td>
+                  <input type="checkbox" class="btn-check" id="muteClick" v-model="settings.muteClick" />
+                  <label class="btn btn-outline-danger btn-sm" for="muteClick">Mute</label>
+                </td>
+                <td>
+                  <input type="checkbox" class="btn-check" id="muteCue" v-model="settings.muteCue" />
+                  <label class="btn btn-outline-danger btn-sm" for="muteCue">Mute</label>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Pan</th>
+                <td style="max-width: 80px">
+                  <input type="range" class="form-range" min="-1" max="1" id="panClick" v-model="settings.panClick" />
+                </td>
+                <td style="max-width: 80px">
+                  <input type="range" class="form-range" min="-1" max="1" id="panCue" v-model="settings.panCue" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+        <div class="col-auto" style="max-width: 100px"></div>
+
         <small v-if="settings.fileFormat === 'mp3'">ℹ Converting to MP3 takes signifigantly longer than WAV</small>
         <small v-if="settings.beatsPerBar === 3">ℹ Consider 6 Beats per Bar and also 3. beat high frequency</small>
       </div>
@@ -195,7 +224,9 @@ export default {
         doubleTime: false,
         highlightMiddle: false,
         panClick: 0,
-        panCue: 0
+        panCue: 0,
+        muteClick: false,
+        muteCue: false
       } as Settings,
       sections: [{ type: 'Intro', numberOfBars: 4 }] as Section[]
     }
@@ -266,6 +297,8 @@ export default {
 
             case 'doubleTime':
             case 'highlightMiddle':
+            case 'muteClick':
+            case 'muteCue':
               // Boolean-Werte konvertieren
               if (value === 'true') {
                 this.settings[setting] = true
