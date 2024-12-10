@@ -35,6 +35,12 @@
           </select>
         </div>
         <div class="col-auto">
+          <label for="fileFormat" class="form-label">Number of Channels</label>
+          <select class="form-select" v-model="settings.numberOfChannels" id="fileFormat">
+            <option v-for="numbers in channelNumbers" :key="numbers" :value="numbers">{{ numbers }}</option>
+          </select>
+        </div>
+        <div class="col-auto">
           <table class="table">
             <thead>
               <tr>
@@ -55,7 +61,7 @@
                   <label class="btn btn-outline-danger btn-sm" for="muteCue">Mute</label>
                 </td>
               </tr>
-              <tr>
+              <tr v-if="settings.numberOfChannels > 1">
                 <th scope="row">Pan</th>
                 <td style="max-width: 80px">
                   <input type="range" class="form-range" min="-1" max="1" id="panClick" v-model="settings.panClick" />
@@ -69,7 +75,7 @@
         </div>
         <div class="col-auto" style="max-width: 100px"></div>
 
-        <small v-if="settings.fileFormat === 'mp3'">ℹ Converting to MP3 takes signifigantly longer than WAV</small>
+        <!-- <small v-if="settings.fileFormat === 'mp3'">ℹ Converting to MP3 takes signifigantly longer than WAV</small> -->
         <small v-if="settings.beatsPerBar === 3">ℹ Consider 6 Beats per Bar and also 3. beat high frequency</small>
       </div>
       <div class="mb-4">
@@ -203,7 +209,7 @@
 
 <script lang="ts">
 import MD from './tone.js'
-import { Pan, Section, Settings, cueTypes, fileFormats } from './types.js'
+import { ChannelNumber, Pan, Section, Settings, channelNumbers, cueTypes, fileFormats, pans } from './types.js'
 
 export default {
   name: 'App',
@@ -212,6 +218,7 @@ export default {
     return {
       cueTypes,
       fileFormats,
+      channelNumbers,
       cueTrack: '',
       isLoading: false,
       settings: {
@@ -226,7 +233,8 @@ export default {
         panClick: 0,
         panCue: 0,
         muteClick: false,
-        muteCue: false
+        muteCue: false,
+        numberOfChannels: 2
       } as Settings,
       sections: [{ type: 'Intro', numberOfBars: 4 }] as Section[]
     }
@@ -278,7 +286,8 @@ export default {
           // Hier differenziert auf Typ prüfen
           switch (setting) {
             case 'fileFormat':
-              if (value === 'wav' || value === 'mp3') {
+              if (value === 'wav') {
+                // || value === 'mp3'
                 this.settings[setting] = value
               }
               break
@@ -309,10 +318,17 @@ export default {
 
             case 'panClick':
             case 'panCue': {
-              // Pan ist -1 | 0 | 1
               const panVal = parseInt(value, 10)
-              if ([-1, 0, 1].includes(panVal)) {
+              if (pans.includes(panVal as Pan)) {
                 this.settings[setting] = panVal as Pan
+              }
+              break
+            }
+
+            case 'numberOfChannels': {
+              const num = parseInt(value, 10)
+              if (channelNumbers.includes(num as ChannelNumber)) {
+                this.settings[setting] = num as ChannelNumber
               }
               break
             }

@@ -123,7 +123,7 @@ export default class MD {
         transport.start() // Startet den Transport
       },
       cueDuration, // Gesamtdauer der Offline-Rendering-Sitzung
-      2
+      this.settings.numberOfChannels
     )
 
     // Konvertiert den Audio-Buffer in eine WAVE-Datei

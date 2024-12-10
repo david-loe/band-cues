@@ -11,6 +11,7 @@ export interface Settings {
   panCue: Pan
   muteClick: boolean
   muteCue: boolean
+  numberOfChannels: ChannelNumber
 }
 
 export interface Section {
@@ -18,10 +19,14 @@ export interface Section {
   numberOfBars: number
 }
 
-export type Pan = -1 | 0 | 1
+export const pans = [-1, 0, 1] as const
+export type Pan = typeof pans[number]
 
 export const fileFormats = ['wav'] as const // mp3 throws error
 export type FileFormat = typeof fileFormats[number]
+
+export const channelNumbers = [1, 2] as const
+export type ChannelNumber = typeof channelNumbers[number]
 
 export const cueTypes = [
   'AcaPella',
