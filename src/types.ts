@@ -9,6 +9,8 @@ export interface Settings {
   highlightMiddle: boolean
   panClick: Pan
   panCue: Pan
+  muteClick: boolean
+  muteCue: boolean
 }
 
 export interface Section {
@@ -18,7 +20,7 @@ export interface Section {
 
 export type Pan = -1 | 0 | 1
 
-export const fileFormats = ['wav', 'mp3'] as const
+export const fileFormats = ['wav'] as const // mp3 throws error
 export type FileFormat = typeof fileFormats[number]
 
 export const cueTypes = [

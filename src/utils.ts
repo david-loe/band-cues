@@ -1,4 +1,5 @@
-import lamejs from 'lamejs'
+import { Mp3Encoder, WavHeader } from 'lamejs'
+
 // Source: https://www.russellgood.com/how-to-convert-audiobuffer-to-audio-file/
 /**Convert an AudioBuffer to a Blob using WAVE representation
  *
@@ -61,24 +62,53 @@ export function bufferToWave(abuffer: AudioBuffer) {
 }
 
 export function wave2mp3(waveBuffer: ArrayBuffer) {
-  const kbps = 128 //encode 128kbps mp3
-  const sampleBlockSize = 1152 //can be anything but make it a multiple of 576 to make encoders life easier
-  const waveHeader = lamejs.WavHeader.readHeader(new DataView(waveBuffer))
+  const kbps = 128 // Encode 128kbps mp3
+  const sampleBlockSize = 1152 // Blockgröße
+  const waveHeader = WavHeader.readHeader(new DataView(waveBuffer))!
   const samples = new Int16Array(waveBuffer, waveHeader.dataOffset, waveHeader.dataLen / 2)
-  const mp3encoder = new lamejs.Mp3Encoder(waveHeader.channels, waveHeader.sampleRate, kbps)
-  var mp3Data = []
 
-  for (var i = 0; i < samples.length; i += sampleBlockSize) {
-    var sampleChunk = samples.subarray(i, i + sampleBlockSize)
-    var mp3buf = mp3encoder.encodeBuffer(sampleChunk)
-    if (mp3buf.length > 0) {
-      mp3Data.push(mp3buf)
+  const mp3encoder = new Mp3Encoder(waveHeader.channels, waveHeader.sampleRate, kbps)
+
+  const mp3Data: Int8Array[] = []
+
+  if (waveHeader.channels === 1) {
+    // Mono: Direkt weiterverarbeiten
+    for (let i = 0; i < samples.length; i += sampleBlockSize) {
+      const sampleChunk = samples.subarray(i, i + sampleBlockSize)
+      const mp3buf = mp3encoder.encodeBuffer(sampleChunk)
+      if (mp3buf.length > 0) {
+        mp3Data.push(mp3buf)
+      }
     }
-  }
-  mp3buf = mp3encoder.flush() //finish writing mp3
+  } else if (waveHeader.channels === 2) {
+    // Stereo: Samples aufteilen
+    const left = new Int16Array(waveHeader.dataLen / 4) // Hälfte für linken Kanal
+    const right = new Int16Array(waveHeader.dataLen / 4) // Hälfte für rechten Kanal
 
+    // Kanäle trennen
+    for (let i = 0, j = 0; i < samples.length; i += 2, j++) {
+      left[j] = samples[i] // Linker Kanal
+      right[j] = samples[i + 1] // Rechter Kanal
+    }
+
+    for (let i = 0; i < left.length; i += sampleBlockSize) {
+      const leftChunk = left.subarray(i, i + sampleBlockSize)
+      const rightChunk = right.subarray(i, i + sampleBlockSize)
+
+      // Stereo-Buffer encoden
+      const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk)
+      if (mp3buf.length > 0) {
+        mp3Data.push(mp3buf)
+      }
+    }
+  } else {
+    throw new Error('Nur Mono- oder Stereo-WAV-Dateien werden unterstützt.')
+  }
+
+  const mp3buf = mp3encoder.flush() // MP3 abschließen
   if (mp3buf.length > 0) {
     mp3Data.push(new Int8Array(mp3buf))
   }
+
   return mp3Data
 }

@@ -1,7 +1,18 @@
 declare module 'lamejs' {
-  // If you know the shapes of the exports from lamejs,
-  // you can declare them here for stronger typing.
-  // For now, you can just declare them as `any`:
-  export const Lame: any
-  export default Lame
+  export class Mp3Encoder {
+    constructor(channels: number, samplerate: number, kbps: number)
+    encodeBuffer(left: Int16Array, right?: Int16Array): Int8Array
+    flush(): Int8Array
+  }
+
+  export class WavHeader {
+    dataOffset: number
+    dataLen: number
+    channels: number
+    sampleRate: number
+
+    static readHeader(dataView: DataView): WavHeader | undefined
+  }
+
+  export function fourccToInt(fourcc: string): number
 }
