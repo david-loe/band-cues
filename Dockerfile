@@ -12,4 +12,4 @@ WORKDIR /app
 
 ENTRYPOINT [ "/bin/sh", "-c", "cp -r /npm_cache/node_modules/. /app/node_modules && exec \"$0\" \"$@\"" ]
 
-CMD ["npm", "run", "serve"]
+CMD ["npm", "run", "dev"]

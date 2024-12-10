@@ -1,0 +1,10 @@
+media
+Dockerfile*
+emptyimage
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.conf
+*.woff2
+*.ttf

@@ -84,8 +84,7 @@
                         v-if="sections.indexOf(section) > 0"
                         type="button"
                         class="btn btn-outline-secondary"
-                        v-on:click="moveSectionUp(section)"
-                      >
+                        v-on:click="moveSectionUp(section)">
                         <i class="bi bi-chevron-up"></i>
                       </button>
                     </div>
@@ -97,8 +96,7 @@
                         v-if="sections.indexOf(section) < sections.length - 1"
                         type="button"
                         class="btn btn-outline-secondary"
-                        v-on:click="moveSectionDown(section)"
-                      >
+                        v-on:click="moveSectionDown(section)">
                         <i class="bi bi-chevron-down"></i>
                       </button>
                     </div>
@@ -115,8 +113,7 @@
                         v-if="sections.indexOf(section) > 0"
                         type="button"
                         class="btn btn-outline-secondary"
-                        v-on:click="moveSectionUp(section)"
-                      >
+                        v-on:click="moveSectionUp(section)">
                         <i class="bi bi-chevron-up"></i>
                       </button>
                     </div>
@@ -125,8 +122,7 @@
                         v-if="sections.indexOf(section) < sections.length - 1"
                         type="button"
                         class="btn btn-outline-secondary"
-                        v-on:click="moveSectionDown(section)"
-                      >
+                        v-on:click="moveSectionDown(section)">
                         <i class="bi bi-chevron-down"></i>
                       </button>
                     </div>
@@ -176,36 +172,17 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import MD from './tone.js'
+import { Pan, Section, Settings, cueTypes, fileFormats } from './types.js'
 
 export default {
   name: 'App',
   components: {},
   data() {
     return {
-      cueTypes: [
-        'AcaPella',
-        'Band',
-        'Break',
-        'Bridge',
-        'Chorus',
-        'Count',
-        'End',
-        'Instrumental',
-        'Intro',
-        'KeyChange',
-        'Outro',
-        'PreChorus',
-        'Ready',
-        'Riff',
-        'Solo',
-        'Tag',
-        'Turn',
-        'Verse',
-      ],
-      oscTypes: ['sine', 'sawtooth', 'square', 'triangle'],
-      fileFormats: ['mp3', 'wav'],
+      cueTypes,
+      fileFormats,
       cueTrack: '',
       isLoading: false,
       settings: {
@@ -218,15 +195,19 @@ export default {
         doubleTime: false,
         highlightMiddle: false,
         panClick: 0,
-        panCue: 0,
-      },
-      sections: [{ type: 'Intro', numberOfBars: 4 }],
+        panCue: 0
+      } as Settings,
+      sections: [{ type: 'Intro', numberOfBars: 4 }] as Section[]
     }
   },
   methods: {
     cueToUrl() {
       var url = window.location.origin + window.location.pathname + '?'
-      url = url + new URLSearchParams(this.settings).toString()
+      const stringParams: Record<string, string> = Object.entries(this.settings).reduce((acc, [key, value]) => {
+        acc[key] = String(value)
+        return acc
+      }, {} as Record<string, string>)
+      url = url + new URLSearchParams(stringParams).toString()
       var sectionURL = ''
       for (const section of this.sections) {
         sectionURL =
@@ -240,36 +221,73 @@ export default {
           },
           function (err) {
             console.log(err)
-          },
+          }
         )
       }
     },
     urlToCue() {
       const urlParams = new URLSearchParams(window.location.search)
+
+      // Sections parsen
       const sections = []
-      for (const section of urlParams.getAll('sections')) {
-        sections.push(JSON.parse(section))
+      for (const sectionParam of urlParams.getAll('sections')) {
+        // JSON.parse gibt 'any' zurück, wir casten auf Section
+        const parsed = JSON.parse(sectionParam) as Section
+        sections.push(parsed)
       }
       if (sections.length > 0) {
         this.sections = sections
       }
-      const settings = Object.keys(this.settings)
-      for (const setting of settings) {
+
+      // Settings parsen
+      const settingsKeys = Object.keys(this.settings) as (keyof Settings)[]
+      for (const setting of settingsKeys) {
         const value = urlParams.get(setting)
         if (value !== null) {
-          if (!isNaN(value)) {
-            this.settings[setting] = +value
-          } else if (value === 'true') {
-            this.settings[setting] = true
-          } else if (value === 'false') {
-            this.settings[setting] = false
-          } else {
-            this.settings[setting] = value
+          // Hier differenziert auf Typ prüfen
+          switch (setting) {
+            case 'fileFormat':
+              if (value === 'wav' || value === 'mp3') {
+                this.settings[setting] = value
+              }
+              break
+
+            case 'oscFrequency':
+            case 'firstOscFrequency':
+            case 'bpm':
+            case 'beatsPerBar':
+            case 'numberOfPreBars': {
+              const num = parseInt(value, 10)
+              if (!isNaN(num)) {
+                this.settings[setting] = num // TypeScript weiß, dass der erwartete Typ number ist
+              }
+              break
+            }
+
+            case 'doubleTime':
+            case 'highlightMiddle':
+              // Boolean-Werte konvertieren
+              if (value === 'true') {
+                this.settings[setting] = true
+              } else if (value === 'false') {
+                this.settings[setting] = false
+              }
+              break
+
+            case 'panClick':
+            case 'panCue': {
+              // Pan ist -1 | 0 | 1
+              const panVal = parseInt(value, 10)
+              if ([-1, 0, 1].includes(panVal)) {
+                this.settings[setting] = panVal as Pan
+              }
+              break
+            }
           }
         }
       }
     },
-    moveSectionDown(section) {
+    moveSectionDown(section: Section) {
       const index = this.sections.indexOf(section)
       if (index !== -1 && index < this.sections.length - 1) {
         var temp = this.sections[index]
@@ -277,7 +295,7 @@ export default {
         this.sections[index + 1] = temp
       }
     },
-    moveSectionUp(section) {
+    moveSectionUp(section: Section) {
       const index = this.sections.indexOf(section)
       if (index > 0) {
         var temp = this.sections[index]
@@ -288,15 +306,15 @@ export default {
     addSection() {
       this.sections.push({ type: 'Intro', numberOfBars: 4 })
     },
-    duplicateSection(section) {
-      const newSection = {}
+    duplicateSection(section: Section) {
+      const newSection = {} as Section
       Object.assign(newSection, section)
       const index = this.sections.indexOf(section)
       if (index !== -1) {
         this.sections.splice(index, 0, newSection)
       }
     },
-    deleteSection(section) {
+    deleteSection(section: Section) {
       const index = this.sections.indexOf(section)
       if (index !== -1) {
         this.sections.splice(index, 1)
@@ -308,15 +326,15 @@ export default {
     async generate() {
       if (!this.inputCorrect()) return ''
       this.isLoading = true
-      const md = new MD(this.settings, this.sections, this.oscTypes)
+      const md = new MD(this.settings, this.sections)
       const result = await md.generateCues()
       this.isLoading = false
       this.cueTrack = result
-    },
+    }
   },
   beforeMount() {
     this.urlToCue()
-  },
+  }
 }
 </script>
 
