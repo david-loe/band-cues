@@ -12,13 +12,17 @@ export interface Settings {
   muteClick: boolean
   muteCue: boolean
   numberOfChannels: ChannelNumber
+  sampleRate: SampleRate
 }
 
 export interface Section {
-  orderCue: CueType
+  orderCue: OrderCueType
   modalCue: ModalCueType | null
   numberOfBars: number
 }
+
+export const sampleRates = [44100, 48000] as const
+export type SampleRate = typeof sampleRates[number]
 
 export const pans = [-1, 0, 1] as const
 export type Pan = typeof pans[number]

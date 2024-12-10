@@ -35,9 +35,15 @@
           </select>
         </div>
         <div class="col-auto">
-          <label for="fileFormat" class="form-label">Number of Channels</label>
-          <select class="form-select" v-model="settings.numberOfChannels" id="fileFormat">
+          <label for="numberOfChannels" class="form-label">Number of Channels</label>
+          <select class="form-select" v-model="settings.numberOfChannels" id="numberOfChannels">
             <option v-for="numbers in channelNumbers" :key="numbers" :value="numbers">{{ numbers }}</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <label for="sampleRate" class="form-label">Sample Rate</label>
+          <select class="form-select" v-model="settings.sampleRate" id="sampleRate">
+            <option v-for="sampleRate in sampleRates" :key="sampleRate" :value="sampleRate">{{ sampleRate }}</option>
           </select>
         </div>
         <div class="col-auto">
@@ -99,7 +105,7 @@
                   <div class="col-auto" style="max-width: 160px">
                     <label :for="index + 'section'" class="form-label">Section</label>
                     <select class="form-select" v-model="section.orderCue" :id="index + 'section'">
-                      <option v-for="type in cueTypes" :key="type">{{ type }}</option>
+                      <option v-for="type in orderCueTypes" :key="type">{{ type }}</option>
                     </select>
                   </div>
                   <div class="col-auto" style="max-width: 160px">
@@ -216,7 +222,20 @@
 
 <script lang="ts">
 import MD from './tone.js'
-import { ChannelNumber, Pan, Section, Settings, channelNumbers, cueTypes, fileFormats, modalCueTypes, pans } from './types.js'
+import {
+  ChannelNumber,
+  Pan,
+  SampleRate,
+  Section,
+  Settings,
+  channelNumbers,
+  cueTypes,
+  fileFormats,
+  modalCueTypes,
+  orderCueTypes,
+  pans,
+  sampleRates
+} from './types.js'
 
 export default {
   name: 'App',
@@ -227,6 +246,8 @@ export default {
       fileFormats,
       channelNumbers,
       modalCueTypes,
+      orderCueTypes,
+      sampleRates,
       cueTrack: '',
       isLoading: false,
       settings: {
@@ -235,14 +256,15 @@ export default {
         firstOscFrequency: 1760,
         bpm: 120,
         beatsPerBar: 4,
-        numberOfPreBars: 2,
+        numberOfPreBars: 1,
         doubleTime: false,
         highlightMiddle: false,
         panClick: 0,
         panCue: 0,
         muteClick: false,
         muteCue: false,
-        numberOfChannels: 2
+        numberOfChannels: 2,
+        sampleRate: 48000
       } as Settings,
       sections: [{ orderCue: 'Intro', numberOfBars: 4 }] as Section[]
     }
@@ -339,6 +361,13 @@ export default {
               const num = parseInt(value, 10)
               if (channelNumbers.includes(num as ChannelNumber)) {
                 this.settings[setting] = num as ChannelNumber
+              }
+              break
+            }
+            case 'sampleRate': {
+              const num = parseInt(value, 10)
+              if (sampleRates.includes(num as SampleRate)) {
+                this.settings[setting] = num as SampleRate
               }
               break
             }

@@ -23,8 +23,6 @@ export default class MD {
   }
 
   async generateCues() {
-    const startTime = Date.now() // Startzeit wird für Logging-Zwecke gespeichert
-
     // Gesamtanzahl der Takte berechnen, einschließlich Vorbereitungs-Takte
     var totalNumberOfBars = this.settings.numberOfPreBars
     for (const section of this.sections) {
@@ -139,7 +137,8 @@ export default class MD {
         transport.start() // Startet den Transport
       },
       cueDuration, // Gesamtdauer der Offline-Rendering-Sitzung
-      this.settings.numberOfChannels
+      this.settings.numberOfChannels,
+      this.settings.sampleRate
     )
 
     // Konvertiert den Audio-Buffer in eine WAVE-Datei
