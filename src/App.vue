@@ -98,8 +98,15 @@
                 <div class="row align-items-end">
                   <div class="col-auto" style="max-width: 160px">
                     <label :for="index + 'section'" class="form-label">Section</label>
-                    <select class="form-select" v-model="section.type" :id="index + 'section'">
+                    <select class="form-select" v-model="section.orderCue" :id="index + 'section'">
                       <option v-for="type in cueTypes" :key="type">{{ type }}</option>
+                    </select>
+                  </div>
+                  <div class="col-auto" style="max-width: 160px">
+                    <label :for="index + 'section'" class="form-label">Modal Cue</label>
+                    <select class="form-select" v-model="section.modalCue" :id="index + 'section'">
+                      <option :value="null">None</option>
+                      <option v-for="type in modalCueTypes" :key="type">{{ type }}</option>
                     </select>
                   </div>
                   <div class="col-auto" style="max-width: 80px">
@@ -209,7 +216,7 @@
 
 <script lang="ts">
 import MD from './tone.js'
-import { ChannelNumber, Pan, Section, Settings, channelNumbers, cueTypes, fileFormats, pans } from './types.js'
+import { ChannelNumber, Pan, Section, Settings, channelNumbers, cueTypes, fileFormats, modalCueTypes, pans } from './types.js'
 
 export default {
   name: 'App',
@@ -219,6 +226,7 @@ export default {
       cueTypes,
       fileFormats,
       channelNumbers,
+      modalCueTypes,
       cueTrack: '',
       isLoading: false,
       settings: {
@@ -236,7 +244,7 @@ export default {
         muteCue: false,
         numberOfChannels: 2
       } as Settings,
-      sections: [{ type: 'Intro', numberOfBars: 4 }] as Section[]
+      sections: [{ orderCue: 'Intro', numberOfBars: 4 }] as Section[]
     }
   },
   methods: {
@@ -250,7 +258,9 @@ export default {
       var sectionURL = ''
       for (const section of this.sections) {
         sectionURL =
-          sectionURL + '&sections=' + encodeURIComponent('{"type":"' + section.type + '","numberOfBars":' + section.numberOfBars + '}')
+          sectionURL +
+          '&sections=' +
+          encodeURIComponent('{"orderCue":"' + section.orderCue + '","numberOfBars":' + section.numberOfBars + '}')
       }
       url = url + sectionURL
       if (window.isSecureContext) {
@@ -353,7 +363,7 @@ export default {
       }
     },
     addSection() {
-      this.sections.push({ type: 'Intro', numberOfBars: 4 })
+      this.sections.push({ orderCue: 'Intro', numberOfBars: 4, modalCue: null })
     },
     duplicateSection(section: Section) {
       const newSection = {} as Section

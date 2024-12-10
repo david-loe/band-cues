@@ -15,7 +15,8 @@ export interface Settings {
 }
 
 export interface Section {
-  type: CueType
+  orderCue: CueType
+  modalCue: ModalCueType | null
   numberOfBars: number
 }
 
@@ -28,9 +29,7 @@ export type FileFormat = typeof fileFormats[number]
 export const channelNumbers = [1, 2] as const
 export type ChannelNumber = typeof channelNumbers[number]
 
-export const cueTypes = [
-  'AcaPella',
-  'Band',
+export const orderCueTypes = [
   'Break',
   'Bridge',
   'Chorus',
@@ -38,7 +37,6 @@ export const cueTypes = [
   'End',
   'Instrumental',
   'Intro',
-  'KeyChange',
   'Outro',
   'PreChorus',
   'Ready',
@@ -48,6 +46,12 @@ export const cueTypes = [
   'Turn',
   'Verse'
 ] as const
+export type OrderCueType = typeof orderCueTypes[number]
+
+export const modalCueTypes = ['AcaPella', 'Band', 'Build', 'Calm', 'Drop', 'Drums', 'KeyChange', 'Power'] as const
+export type ModalCueType = typeof modalCueTypes[number]
+
+export const cueTypes = [...orderCueTypes, ...modalCueTypes] as const
 export type CueType = typeof cueTypes[number]
 
 export const countTypes = ['1', '2', '3', '4', '5', '6', '7'] as const

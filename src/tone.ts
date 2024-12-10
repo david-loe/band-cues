@@ -32,7 +32,8 @@ export default class MD {
     }
 
     // Berechnung der Gesamtdauer der Cue-Audiosequenz
-    const cueDuration = Math.ceil((60 / this.settings.bpm) * this.settings.beatsPerBar * totalNumberOfBars)
+    const beatDuration = 60 / this.settings.bpm
+    const cueDuration = Math.ceil(beatDuration * this.settings.beatsPerBar * totalNumberOfBars)
 
     // Offline-Audio-Rendering mit Tone.js
     const buffer = await Tone.Offline(
@@ -53,7 +54,10 @@ export default class MD {
 
         // Extrahiert die eindeutigen Abschnittstypen
         for (var i = 0; i < this.sections.length; i++) {
-          sectionTypes.push(this.sections[i].type)
+          sectionTypes.push(this.sections[i].orderCue)
+          if (this.sections[i].modalCue) {
+            sectionTypes.push(this.sections[i].modalCue!)
+          }
         }
         sectionTypes = sectionTypes.filter((item, index) => {
           return sectionTypes.indexOf(item) === index
@@ -66,7 +70,7 @@ export default class MD {
         }
 
         // Lädt Audiodateien für die Beats pro Takt (außer dem ersten Beat)
-        for (i = 2; i <= this.settings.beatsPerBar; i++) {
+        for (i = 2; i <= this.settings.beatsPerBar && i < 8; i++) {
           player[i.toString() as CountType] = new Tone.Player().connect(cueChannel)
           await player[i.toString() as CountType]!.load(new URL(`./assets/cues/${i}.wav`, import.meta.url).href)
         }
@@ -75,6 +79,7 @@ export default class MD {
 
         var countBeats = 0 // Zählt die abgespielten Beats
         var cueCounting = false // Markiert, ob eine Cue-Ansage läuft
+        let skipCueCounting = 0
 
         // Hauptzeitplan für Beat-Wiederholungen
         transport.scheduleRepeat((time) => {
@@ -83,7 +88,8 @@ export default class MD {
           } else {
             // Erster Beat eines Takts
             if (countBeats % this.settings.beatsPerBar === 1) {
-              cueCounting = false // Cue-Ansage zurücksetzen
+              cueCounting = false
+              skipCueCounting = 0
               firstOsc.start(time).stop(time + 0.04) // Startet den ersten Oszillator kurz
 
               // Berechnet den aktuellen Beat relativ zu den Vorbereitungs-Takten
@@ -91,8 +97,14 @@ export default class MD {
               if (recalcedCountBeats >= 0) {
                 const getSection = this.getSection(recalcedCountBeats) // Holt den aktuellen Abschnitt
                 if (getSection.isFirstBeatOfSection) {
-                  player[getSection.section!.type]!.start(time) // Spielt Cue für Abschnittstyp ab
+                  player[getSection.section!.orderCue]!.start(time) // Spielt Cue für Abschnittstyp ab
                   cueCounting = true // Aktiviert Cue-Ansage
+                  let cueDuration = player[getSection.section!.orderCue]!.buffer.duration - 0.19
+                  if (getSection.section!.modalCue) {
+                    player[getSection.section!.modalCue]!.start(time + cueDuration)
+                    cueDuration += player[getSection.section!.modalCue]!.buffer.duration - 0.3
+                  }
+                  skipCueCounting = Math.floor(cueDuration / beatDuration)
                 }
               }
             } else {
@@ -103,8 +115,12 @@ export default class MD {
                 osc.start(time).stop(time + 0.04) // Standardton für andere Beats
               }
               if (cueCounting) {
-                // Spielt Beat-spezifische Cue ab, wenn Cue-Ansage aktiv ist
-                player[(((countBeats - 1) % this.settings.beatsPerBar) + 1).toString() as CountType]!.start(time)
+                if (skipCueCounting > 0) {
+                  skipCueCounting -= 1
+                } else {
+                  // Spielt Beat-spezifische Cue ab (2, 3, 4)
+                  player[(((countBeats - 1) % this.settings.beatsPerBar) + 1).toString() as CountType]!.start(time)
+                }
               }
             }
           }
