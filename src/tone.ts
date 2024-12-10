@@ -1,14 +1,16 @@
 import * as Tone from 'tone'
+import { CountType, CueType, oscTypes, Section, Settings } from './types'
 import { bufferToWave, wave2mp3 } from './utils'
 
 export default class MD {
-  constructor(settings, sections, oscTypes) {
+  settings: Settings
+  sections: Section[]
+  constructor(settings: Settings, sections: Section[]) {
     this.settings = settings
     this.sections = sections
-    this.oscTypes = oscTypes
   }
 
-  getSection(beat) {
+  getSection(beat: number) {
     var countBeats = 0
     for (var i = 0; i < this.sections.length; i++) {
       var isFirstBeatOfSection = countBeats + 1 === beat
@@ -23,7 +25,6 @@ export default class MD {
   async generateCues() {
     const startTime = Date.now() // Startzeit wird für Logging-Zwecke gespeichert
 
-
     // Gesamtanzahl der Takte berechnen, einschließlich Vorbereitungs-Takte
     var totalNumberOfBars = this.settings.numberOfPreBars
     for (const section of this.sections) {
@@ -37,29 +38,31 @@ export default class MD {
     const buffer = await Tone.Offline(
       async ({ transport }) => {
         // Oszillatoren für Tonausgabe initialisieren
-        const osc = new Tone.Oscillator(this.settings.oscFrequency, this.oscTypes[0]).toDestination()
-        const firstOsc = new Tone.Oscillator(this.settings.firstOscFrequency, this.oscTypes[0]).toDestination()
+        const osc = new Tone.Oscillator(this.settings.oscFrequency, oscTypes[0]).toDestination()
+        const firstOsc = new Tone.Oscillator(this.settings.firstOscFrequency, oscTypes[0]).toDestination()
         const offlineDestination = Tone.getDestination() // Offline-Audioziel für Tone.js
 
-        const player = {} // Speicher für Player-Objekte
-        var sectionTypes = [] // Speichert die Typen der Abschnitte
+        const player = {} as { [K in CueType | CountType]?: Tone.Player } // Speicher für Player-Objekte
+        var sectionTypes: CueType[] = [] // Speichert die Typen der Abschnitte
 
         // Extrahiert die eindeutigen Abschnittstypen
         for (var i = 0; i < this.sections.length; i++) {
           sectionTypes.push(this.sections[i].type)
         }
-        sectionTypes = [...new Set(sectionTypes)]
+        sectionTypes = sectionTypes.filter((item, index) => {
+          return sectionTypes.indexOf(item) === index
+        })
 
         // Lädt Audiodateien für jeden Abschnittstyp
         for (const type of sectionTypes) {
           player[type] = new Tone.Player().connect(offlineDestination)
-          await player[type].load(require('./assets/cues/' + type + '.wav')) // Audiodatei laden
+          await player[type].load(new URL(`./assets/cues/${type}.wav`, import.meta.url).href) // Audiodatei laden
         }
 
         // Lädt Audiodateien für die Beats pro Takt (außer dem ersten Beat)
         for (i = 2; i <= this.settings.beatsPerBar; i++) {
-          player[i.toString()] = new Tone.Player().connect(offlineDestination)
-          await player[i.toString()].load(require('./assets/cues/' + i.toString() + '.wav'))
+          player[i.toString() as CountType] = new Tone.Player().connect(offlineDestination)
+          await player[i.toString() as CountType]!.load(new URL(`./assets/cues/${i}.wav`, import.meta.url).href)
         }
 
         transport.bpm.value = this.settings.bpm // Setzt das Tempo des Transports
@@ -82,7 +85,7 @@ export default class MD {
               if (recalcedCountBeats >= 0) {
                 const getSection = this.getSection(recalcedCountBeats) // Holt den aktuellen Abschnitt
                 if (getSection.isFirstBeatOfSection) {
-                  player[getSection.section.type].start(time) // Spielt Cue für Abschnittstyp ab
+                  player[getSection.section!.type]!.start(time) // Spielt Cue für Abschnittstyp ab
                   cueCounting = true // Aktiviert Cue-Ansage
                 }
               }
@@ -95,7 +98,7 @@ export default class MD {
               }
               if (cueCounting) {
                 // Spielt Beat-spezifische Cue ab, wenn Cue-Ansage aktiv ist
-                player[(((countBeats - 1) % this.settings.beatsPerBar) + 1).toString()].start(time)
+                player[(((countBeats - 1) % this.settings.beatsPerBar) + 1).toString() as CountType]!.start(time)
               }
             }
           }
@@ -108,29 +111,27 @@ export default class MD {
               osc.start(time).stop(time + 0.04)
             },
             '4n',
-            '8n', // Startzeit auf halbe Noten
+            '8n' // Startzeit auf halbe Noten
           )
         }
-
         transport.start() // Startet den Transport
       },
       cueDuration, // Gesamtdauer der Offline-Rendering-Sitzung
-      1, // Offline-Rendering-Qualität (1 = normale Auflösung)
+      1 // Offline-Rendering-Qualität (1 = normale Auflösung)
     )
 
     // Konvertiert den Audio-Buffer in eine WAVE-Datei
-    const wave = bufferToWave(buffer.get())
-
-    // Erstellt eine URL für die generierte Audiodatei je nach Dateiformat
-    if (this.settings.fileFormat === 'wav') {
-      return URL.createObjectURL(new Blob([wave], { type: 'audio/wav' }))
-    } else if (this.settings.fileFormat === 'mp3') {
-      return URL.createObjectURL(new Blob(wave2mp3(wave), { type: 'audio/mp3' }))
+    const audioBuffer = buffer.get()
+    let result = ''
+    if (audioBuffer) {
+      const wave = bufferToWave(audioBuffer)
+      // Erstellt eine URL für die generierte Audiodatei je nach Dateiformat
+      if (this.settings.fileFormat === 'wav') {
+        result = URL.createObjectURL(new Blob([wave], { type: 'audio/wav' }))
+      } else if (this.settings.fileFormat === 'mp3') {
+        result = URL.createObjectURL(new Blob(wave2mp3(wave), { type: 'audio/mp3' }))
+      }
     }
-    console.log(Date.now() - startTime) // Protokolliert die verstrichene Zeit
+    return result
   }
 }
-
-
-
-
