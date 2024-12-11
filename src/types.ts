@@ -22,16 +22,16 @@ export interface Section {
 }
 
 export const sampleRates = [44100, 48000] as const
-export type SampleRate = typeof sampleRates[number]
+export type SampleRate = (typeof sampleRates)[number]
 
 export const pans = [-1, 0, 1] as const
-export type Pan = typeof pans[number]
+export type Pan = (typeof pans)[number]
 
 export const fileFormats = ['wav'] as const // mp3 throws error
-export type FileFormat = typeof fileFormats[number]
+export type FileFormat = (typeof fileFormats)[number]
 
 export const channelNumbers = [1, 2] as const
-export type ChannelNumber = typeof channelNumbers[number]
+export type ChannelNumber = (typeof channelNumbers)[number]
 
 export const orderCueTypes = [
   'Break',
@@ -50,16 +50,16 @@ export const orderCueTypes = [
   'Turn',
   'Verse'
 ] as const
-export type OrderCueType = typeof orderCueTypes[number]
+export type OrderCueType = (typeof orderCueTypes)[number]
 
-export const modalCueTypes = ['AcaPella', 'Band', 'Build', 'Calm', 'Drop', 'Drums', 'KeyChange', 'Power'] as const
-export type ModalCueType = typeof modalCueTypes[number]
+export const modalCueTypes = ['AcaPella', 'Band', 'Build', 'Calm', 'Drop', 'Drums', 'Instrumental', 'KeyChange', 'Power'] as const
+export type ModalCueType = (typeof modalCueTypes)[number]
 
 export const cueTypes = [...orderCueTypes, ...modalCueTypes] as const
-export type CueType = typeof cueTypes[number]
+export type CueType = (typeof cueTypes)[number]
 
 export const countTypes = ['1', '2', '3', '4', '5', '6', '7'] as const
-export type CountType = typeof countTypes[number]
+export type CountType = (typeof countTypes)[number]
 
 export const oscTypes = ['sine', 'sawtooth', 'square', 'triangle'] as const
-export type OscType = typeof oscTypes[number]
+export type OscType = (typeof oscTypes)[number]
