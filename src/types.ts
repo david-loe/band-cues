@@ -17,7 +17,7 @@ export interface Settings {
 
 export interface Section {
   orderCue: OrderCueType
-  modalCue: ModalCueType | null
+  modalCue: ModalCueType | null | undefined
   numberOfBars: number
 }
 

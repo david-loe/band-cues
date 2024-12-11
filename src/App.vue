@@ -279,10 +279,7 @@ export default {
       url = url + new URLSearchParams(stringParams).toString()
       var sectionURL = ''
       for (const section of this.sections) {
-        sectionURL =
-          sectionURL +
-          '&sections=' +
-          encodeURIComponent('{"orderCue":"' + section.orderCue + '","numberOfBars":' + section.numberOfBars + '}')
+        sectionURL = sectionURL + '&sections=' + encodeURIComponent(JSON.stringify(section, (key, val) => (val === null ? undefined : val)))
       }
       url = url + sectionURL
       if (window.isSecureContext) {
