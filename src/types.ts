@@ -17,8 +17,9 @@ export interface Settings {
 
 export interface Section {
   orderCue: OrderCueType
-  modalCue: ModalCueType | null | undefined
+  modalCue?: ModalCueType | null
   numberOfBars: number
+  noCountIn?: boolean
 }
 
 export const sampleRates = [44100, 48000] as const

@@ -96,7 +96,8 @@ export default class MD {
                 const getSection = this.getSection(recalcedCountBeats) // Holt den aktuellen Abschnitt
                 if (getSection.isFirstBeatOfSection) {
                   player[getSection.section!.orderCue]!.start(time) // Spielt Cue für Abschnittstyp ab
-                  cueCounting = true // Aktiviert Cue-Ansage
+                  cueCounting = !getSection.section!.noCountIn // Aktiviert Cue-Ansage
+
                   let cueDuration = player[getSection.section!.orderCue]!.buffer.duration - 0.19
                   if (getSection.section!.modalCue) {
                     player[getSection.section!.modalCue]!.start(time + cueDuration)

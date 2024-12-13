@@ -108,16 +108,22 @@
                       <option v-for="type in orderCueTypes" :key="type">{{ type }}</option>
                     </select>
                   </div>
-                  <div class="col-auto" style="max-width: 160px">
+                  <div class="col-auto">
                     <label :for="index + 'section'" class="form-label">Modal Cue</label>
-                    <select class="form-select" v-model="section.modalCue" :id="index + 'section'">
-                      <option :value="null">None</option>
+                    <select class="form-select form-select-sm" v-model="section.modalCue" :id="index + 'section'">
+                      <option :value="null"></option>
                       <option v-for="type in modalCueTypes" :key="type">{{ type }}</option>
                     </select>
                   </div>
                   <div class="col-auto" style="max-width: 80px">
                     <label :for="index + 'numberOfBars'" class="form-label">Bars</label>
                     <input type="number" class="form-control" min="1" :id="index + 'numberOfBars'" v-model="section.numberOfBars" />
+                  </div>
+                  <div class="col-auto">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" :id="index + 'noCountIn'" v-model="section.noCountIn" />
+                      <label class="form-check-label" :for="index + 'noCountIn'">No Count In</label>
+                    </div>
                   </div>
                   <div class="col-auto">
                     <button type="button" class="btn btn-outline-secondary d-none d-sm-block" v-on:click="duplicateSection(section)">
@@ -266,7 +272,7 @@ export default {
         numberOfChannels: 2,
         sampleRate: 48000
       } as Settings,
-      sections: [{ orderCue: 'Intro', numberOfBars: 4 }] as Section[]
+      sections: [{ orderCue: 'Intro', numberOfBars: 4, modalCue: null, noCountIn: false }] as Section[]
     }
   },
   methods: {
@@ -279,7 +285,10 @@ export default {
       url = url + new URLSearchParams(stringParams).toString()
       var sectionURL = ''
       for (const section of this.sections) {
-        sectionURL = sectionURL + '&sections=' + encodeURIComponent(JSON.stringify(section, (key, val) => (val === null ? undefined : val)))
+        sectionURL =
+          sectionURL +
+          '&sections=' +
+          encodeURIComponent(JSON.stringify(section, (key, val) => (val === null || val === false ? undefined : val)))
       }
       url = url + sectionURL
       if (window.isSecureContext) {
@@ -389,7 +398,7 @@ export default {
       }
     },
     addSection() {
-      this.sections.push({ orderCue: 'Intro', numberOfBars: 4, modalCue: null })
+      this.sections.push({ orderCue: 'Intro', numberOfBars: 4, modalCue: null, noCountIn: false })
     },
     duplicateSection(section: Section) {
       const newSection = {} as Section
