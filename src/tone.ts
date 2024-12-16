@@ -98,10 +98,10 @@ export default class MD {
                   player[getSection.section!.orderCue]!.start(time) // Spielt Cue für Abschnittstyp ab
                   cueCounting = !getSection.section!.noCountIn // Aktiviert Cue-Ansage
 
-                  let cueDuration = player[getSection.section!.orderCue]!.buffer.duration - 0.19
+                  let cueDuration = player[getSection.section!.orderCue]!.buffer.duration
                   if (getSection.section!.modalCue) {
                     player[getSection.section!.modalCue]!.start(time + cueDuration)
-                    cueDuration += player[getSection.section!.modalCue]!.buffer.duration - 0.3
+                    cueDuration += player[getSection.section!.modalCue]!.buffer.duration - 0.16
                   }
                   skipCueCounting = Math.floor(cueDuration / beatDuration)
                 }
