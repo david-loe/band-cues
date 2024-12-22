@@ -96,7 +96,7 @@
                   </div>
                   <div class="col-auto" style="max-width: 80px">
                     <label for="numberOfPreBars" class="form-label">Bars</label>
-                    <input type="number" class="form-control" min="1" id="numberOfPreBars" v-model="settings.numberOfPreBars" />
+                    <input type="number" class="form-control" min="0" id="numberOfPreBars" v-model="settings.numberOfPreBars" />
                   </div>
                 </div>
               </li>
