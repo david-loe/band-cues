@@ -16,3 +16,8 @@ declare module 'lamejs' {
 
   export function fourccToInt(fourcc: string): number
 }
+
+declare module 'really-relaxed-json' {
+  export function toRJson(json: string): string
+  export function toJson(rjson: string): string
+}

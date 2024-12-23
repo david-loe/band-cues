@@ -229,19 +229,18 @@
 <script lang="ts">
 import MD from './tone.js'
 import {
-  ChannelNumber,
-  Pan,
-  SampleRate,
   Section,
-  Settings,
   channelNumbers,
   cueTypes,
+  defaultSections,
+  defaultSettings,
   fileFormats,
   modalCueTypes,
   orderCueTypes,
-  pans,
   sampleRates
 } from './types.js'
+import URLCoder from './urlCoder.js'
+const coder = new URLCoder()
 
 export default {
   name: 'App',
@@ -256,41 +255,14 @@ export default {
       sampleRates,
       cueTrack: '',
       isLoading: false,
-      settings: {
-        fileFormat: 'wav',
-        oscFrequency: 1318,
-        firstOscFrequency: 1760,
-        bpm: 120,
-        beatsPerBar: 4,
-        numberOfPreBars: 1,
-        doubleTime: false,
-        highlightMiddle: false,
-        panClick: 0,
-        panCue: 0,
-        muteClick: false,
-        muteCue: false,
-        numberOfChannels: 2,
-        sampleRate: 48000
-      } as Settings,
-      sections: [{ orderCue: 'Intro', numberOfBars: 4, modalCue: null, noCountIn: false }] as Section[]
+      settings: defaultSettings,
+      sections: defaultSections
     }
   },
   methods: {
     cueToUrl() {
-      var url = window.location.origin + window.location.pathname + '?'
-      const stringParams: Record<string, string> = Object.entries(this.settings).reduce((acc, [key, value]) => {
-        acc[key] = String(value)
-        return acc
-      }, {} as Record<string, string>)
-      url = url + new URLSearchParams(stringParams).toString()
-      var sectionURL = ''
-      for (const section of this.sections) {
-        sectionURL =
-          sectionURL +
-          '&sections=' +
-          encodeURIComponent(JSON.stringify(section, (key, val) => (val === null || val === false ? undefined : val)))
-      }
-      url = url + sectionURL
+      const url = coder.cueToUrl(this.settings, this.sections)
+      console.log(url)
       if (window.isSecureContext) {
         navigator.clipboard.writeText(url).then(
           function () {
@@ -303,83 +275,9 @@ export default {
       }
     },
     urlToCue() {
-      const urlParams = new URLSearchParams(window.location.search)
-
-      // Sections parsen
-      const sections = []
-      for (const sectionParam of urlParams.getAll('sections')) {
-        // JSON.parse gibt 'any' zurück, wir casten auf Section
-        const parsed = JSON.parse(sectionParam) as Section
-        sections.push(parsed)
-      }
-      if (sections.length > 0) {
-        this.sections = sections
-      }
-
-      // Settings parsen
-      const settingsKeys = Object.keys(this.settings) as (keyof Settings)[]
-      for (const setting of settingsKeys) {
-        const value = urlParams.get(setting)
-        if (value !== null) {
-          // Hier differenziert auf Typ prüfen
-          switch (setting) {
-            case 'fileFormat':
-              if (value === 'wav') {
-                // || value === 'mp3'
-                this.settings[setting] = value
-              }
-              break
-
-            case 'oscFrequency':
-            case 'firstOscFrequency':
-            case 'bpm':
-            case 'beatsPerBar':
-            case 'numberOfPreBars': {
-              const num = parseInt(value, 10)
-              if (!isNaN(num)) {
-                this.settings[setting] = num // TypeScript weiß, dass der erwartete Typ number ist
-              }
-              break
-            }
-
-            case 'doubleTime':
-            case 'highlightMiddle':
-            case 'muteClick':
-            case 'muteCue':
-              // Boolean-Werte konvertieren
-              if (value === 'true') {
-                this.settings[setting] = true
-              } else if (value === 'false') {
-                this.settings[setting] = false
-              }
-              break
-
-            case 'panClick':
-            case 'panCue': {
-              const panVal = parseInt(value, 10)
-              if (pans.includes(panVal as Pan)) {
-                this.settings[setting] = panVal as Pan
-              }
-              break
-            }
-
-            case 'numberOfChannels': {
-              const num = parseInt(value, 10)
-              if (channelNumbers.includes(num as ChannelNumber)) {
-                this.settings[setting] = num as ChannelNumber
-              }
-              break
-            }
-            case 'sampleRate': {
-              const num = parseInt(value, 10)
-              if (sampleRates.includes(num as SampleRate)) {
-                this.settings[setting] = num as SampleRate
-              }
-              break
-            }
-          }
-        }
-      }
+      const result = coder.urlToCue(window.location.search)
+      this.settings = result.settings
+      this.sections = result.sections
     },
     moveSectionDown(section: Section) {
       const index = this.sections.indexOf(section)

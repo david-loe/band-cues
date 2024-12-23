@@ -15,11 +15,50 @@ export interface Settings {
   sampleRate: SampleRate
 }
 
+export const defaultSettings: Settings = {
+  fileFormat: 'wav',
+  oscFrequency: 1318,
+  firstOscFrequency: 1760,
+  bpm: 120,
+  beatsPerBar: 4,
+  numberOfPreBars: 1,
+  doubleTime: false,
+  highlightMiddle: false,
+  panClick: 0,
+  panCue: 0,
+  muteClick: false,
+  muteCue: false,
+  numberOfChannels: 2,
+  sampleRate: 48000
+}
+
+export type SettingsMapping = Required<{
+  [k in keyof Settings]: string
+}>
+
 export interface Section {
   orderCue: OrderCueType
   modalCue?: ModalCueType | null
   numberOfBars: number
   noCountIn?: boolean
+}
+
+export const defaultSections: Section[] = [{ orderCue: 'Intro', numberOfBars: 4, modalCue: null, noCountIn: false }]
+
+export type SectionMapping = Required<{
+  [k in keyof Section]: string
+}>
+
+export type CueMapping = {
+  [c in CueType]: string
+}
+
+export interface Mappings {
+  [version: string]: {
+    t: SettingsMapping
+    s: SectionMapping
+    c: CueMapping
+  }
 }
 
 export const sampleRates = [44100, 48000] as const
