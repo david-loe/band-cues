@@ -1,4 +1,31 @@
 import { Mp3Encoder, WavHeader } from 'lamejs'
+import { ListedOrderCueType, listedOrderCueTypes, Section } from './types'
+
+export function getSchedule(sections: Section[]) {
+  const schedule: { type: ListedOrderCueType; count: number }[] = []
+  for (const section of sections) {
+    const sectionType = section.orderCue as ListedOrderCueType
+    if (listedOrderCueTypes.includes(sectionType) && section.modalCue !== 'Instrumental') {
+      if (schedule.length > 0 && schedule[schedule.length - 1].type === sectionType) {
+        schedule[schedule.length - 1].count++
+      } else {
+        schedule.push({ type: sectionType, count: 1 })
+      }
+    }
+  }
+  let result = ''
+  for (const entry of schedule) {
+    result += entry.type
+    if (entry.count > 1) {
+      result += ` (${entry.count}x)`
+    }
+    result += '\n'
+  }
+  if (result.length > 1) {
+    result = result.slice(0, -1)
+  }
+  return { text: result, lines: schedule.length }
+}
 
 // Source: https://www.russellgood.com/how-to-convert-audiobuffer-to-audio-file/
 /**Convert an AudioBuffer to a Blob using WAVE representation

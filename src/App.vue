@@ -185,6 +185,12 @@
               </li>
             </ul>
           </div>
+          <div class="col-auto">
+            <div class="mb-3">
+              <label for="exampleFormControlTextarea1" class="form-label">Schedule</label>
+              <textarea class="form-control" id="exampleFormControlTextarea1" :rows="schedule.lines" :value="schedule.text"></textarea>
+            </div>
+          </div>
         </div>
         <div v-if="sections.length === 0" class="alert alert-secondary mb-2" role="alert">No Section defined.</div>
         <div class="mb-2">
@@ -240,6 +246,7 @@ import {
   sampleRates
 } from './types.js'
 import URLCoder from './urlCoder.js'
+import { getSchedule } from './utils.js'
 const coder = new URLCoder()
 
 export default {
@@ -256,7 +263,8 @@ export default {
       cueTrack: '',
       isLoading: false,
       settings: defaultSettings,
-      sections: defaultSections
+      sections: defaultSections,
+      schedule: { text: '', lines: 0 }
     }
   },
   methods: {
@@ -312,6 +320,9 @@ export default {
         this.sections.splice(index, 1)
       }
     },
+    updateSchedule() {
+      this.schedule = getSchedule(this.sections)
+    },
     inputCorrect() {
       return this.settings.beatsPerBar <= 8 && this.settings.beatsPerBar >= 2 && this.sections.length > 0
     },
@@ -326,6 +337,14 @@ export default {
   },
   beforeMount() {
     this.urlToCue()
+  },
+  watch: {
+    sections: {
+      handler(newV, oldV) {
+        this.updateSchedule()
+      },
+      deep: true
+    }
   }
 }
 </script>

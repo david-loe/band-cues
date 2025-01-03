@@ -73,24 +73,14 @@ export type FileFormat = (typeof fileFormats)[number]
 export const channelNumbers = [1, 2] as const
 export type ChannelNumber = (typeof channelNumbers)[number]
 
-export const orderCueTypes = [
-  'Break',
-  'Bridge',
-  'Chorus',
-  'Count',
-  'End',
-  'Instrumental',
-  'Intro',
-  'Outro',
-  'PreChorus',
-  'Ready',
-  'Riff',
-  'Solo',
-  'Tag',
-  'Turn',
-  'Verse'
-] as const
-export type OrderCueType = (typeof orderCueTypes)[number]
+export const listedOrderCueTypes = ['Bridge', 'Chorus', 'End', 'PreChorus', 'Tag', 'Turn', 'Verse'] as const
+export type ListedOrderCueType = (typeof listedOrderCueTypes)[number]
+
+export const unlistedOrderCueTypes = ['Break', 'Count', 'Instrumental', 'Intro', 'Outro', 'Ready', 'Riff', 'Solo'] as const
+export type UnlistedOrderCueType = (typeof unlistedOrderCueTypes)[number]
+
+export const orderCueTypes = [...listedOrderCueTypes, ...unlistedOrderCueTypes] as const
+export type OrderCueType = (typeof cueTypes)[number]
 
 export const modalCueTypes = ['AcaPella', 'Band', 'Build', 'Calm', 'Drop', 'Drums', 'Instrumental', 'KeyChange', 'Power'] as const
 export type ModalCueType = (typeof modalCueTypes)[number]
