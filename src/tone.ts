@@ -39,9 +39,14 @@ export default class MD {
         //Channel
         const clickChannel = new Tone.Channel({
           pan: this.settings.panClick,
-          mute: this.settings.muteClick
+          mute: this.settings.muteClick,
+          volume: this.settings.volClick
         }).toDestination()
-        const cueChannel = new Tone.Channel({ pan: this.settings.panCue, mute: this.settings.muteCue }).toDestination()
+        const cueChannel = new Tone.Channel({
+          pan: this.settings.panCue,
+          mute: this.settings.muteCue,
+          volume: this.settings.volCue
+        }).toDestination()
 
         // Oszillatoren für Tonausgabe initialisieren
         const osc = new Tone.Oscillator(this.settings.oscFrequency, oscTypes[0]).connect(clickChannel)

@@ -51,29 +51,38 @@
             <thead>
               <tr>
                 <th scope="col"></th>
-                <th scope="col">Click</th>
-                <th scope="col">Cue</th>
+                <th scope="col" class="text-center">Click</th>
+                <th scope="col" class="text-center">Cue</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <th scope="row"></th>
-                <td>
+                <td class="text-center">
                   <input type="checkbox" class="btn-check" id="muteClick" v-model="settings.muteClick" />
                   <label class="btn btn-outline-danger btn-sm" for="muteClick">Mute</label>
                 </td>
-                <td>
+                <td class="text-center">
                   <input type="checkbox" class="btn-check" id="muteCue" v-model="settings.muteCue" />
                   <label class="btn btn-outline-danger btn-sm" for="muteCue">Mute</label>
                 </td>
               </tr>
               <tr v-if="settings.numberOfChannels > 1">
                 <th scope="row">Pan</th>
-                <td style="max-width: 80px">
+                <td style="max-width: 90px">
                   <input type="range" class="form-range" min="-1" max="1" id="panClick" v-model="settings.panClick" />
                 </td>
-                <td style="max-width: 80px">
+                <td style="max-width: 90px">
                   <input type="range" class="form-range" min="-1" max="1" id="panCue" v-model="settings.panCue" />
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" class="align-middle">dB</th>
+                <td style="max-width: 90px">
+                  <input type="number" class="form-control" id="volClick" v-model="settings.volClick" />
+                </td>
+                <td style="max-width: 90px">
+                  <input type="number" class="form-control" id="volCue" v-model="settings.volCue" />
                 </td>
               </tr>
             </tbody>

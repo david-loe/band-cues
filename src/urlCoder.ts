@@ -33,6 +33,8 @@ export default class URLCoder {
         highlightMiddle: 'h',
         panClick: 'pi',
         panCue: 'pu',
+        volClick: 'vi',
+        volCue: 'vu',
         muteClick: 'mi',
         muteCue: 'mu',
         numberOfChannels: 'c',

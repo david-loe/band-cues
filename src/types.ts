@@ -9,6 +9,8 @@ export interface Settings {
   highlightMiddle: boolean
   panClick: Pan
   panCue: Pan
+  volClick: number
+  volCue: number
   muteClick: boolean
   muteCue: boolean
   numberOfChannels: ChannelNumber
@@ -26,6 +28,8 @@ export const defaultSettings: Settings = {
   highlightMiddle: false,
   panClick: 0,
   panCue: 0,
+  volClick: -10,
+  volCue: 0,
   muteClick: false,
   muteCue: false,
   numberOfChannels: 2,
